@@ -66,63 +66,98 @@ impl Minio {
 
         let mut futures = vec![];
 
-        let mut buffer = vec![0; 5_242_880];
+        let mut buffer = vec![0; 100_000];
+        let mut data_part_buffer = vec![];
         let counter = Arc::new(AtomicUsize::from(1));
 
         loop {
             let bytes_read = stream.read(&mut buffer[..]).await?;
 
             if bytes_read == 0 {
+                if futures.is_empty() && data_part_buffer.len() < 5_242_880 {
+                    self.client
+                        .abort_multipart_upload()
+                        .bucket(&bucket_name)
+                        .key(&object_name)
+                        .upload_id(&upload_id)
+                        .send()
+                        .await?;
+
+                    self.client
+                        .put_object()
+                        .bucket(&bucket_name)
+                        .key(&object_name)
+                        .body(ByteStream::from(buffer[..bytes_read].to_vec()))
+                        .send()
+                        .await?;
+
+                    return Ok(());
+                }
+
                 break;
             }
 
-            if futures.is_empty() && bytes_read < 5_242_880 {
-                self.client
-                    .abort_multipart_upload()
-                    .bucket(&bucket_name)
-                    .key(&object_name)
-                    .upload_id(&upload_id)
-                    .send()
-                    .await?;
+            data_part_buffer.extend_from_slice(&buffer[..bytes_read]);
+            buffer = vec![0; 100_000];
 
-                self.client
-                    .put_object()
-                    .bucket(&bucket_name)
-                    .key(&object_name)
-                    .body(ByteStream::from(buffer[..bytes_read].to_vec()))
-                    .send()
-                    .await?;
+            if data_part_buffer.len() >= 5_242_880 {
+                let mut bytes = vec![];
+                std::mem::swap(&mut data_part_buffer, &mut bytes);
 
-                return Ok(());
+                let client_clone = self.client.clone();
+                let counter_clone = counter.clone();
+                let upload_id_clone = upload_id.clone();
+                let object_name_clone = object_name.clone();
+                let bucket_name_clone = bucket_name.clone();
+
+                let future = tokio::spawn(async move {
+                    let part_number = counter_clone.fetch_add(1, Ordering::SeqCst);
+
+                    (
+                        part_number,
+                        client_clone
+                            .upload_part()
+                            .bucket(bucket_name_clone)
+                            .key(object_name_clone)
+                            .upload_id(upload_id_clone)
+                            .part_number(part_number as i32)
+                            .body(ByteStream::from(bytes))
+                            .send()
+                            .await,
+                    )
+                });
+
+                futures.push(future);
             }
-
-            let bytes = (&buffer[..bytes_read]).to_vec();
-            let client_clone = self.client.clone();
-            let counter_clone = counter.clone();
-            let upload_id_clone = upload_id.clone();
-            let object_name_clone = object_name.clone();
-            let bucket_name_clone = bucket_name.clone();
-
-            let future = tokio::spawn(async move {
-                let part_number = counter_clone.fetch_add(1, Ordering::SeqCst);
-
-                (
-                    part_number,
-                    client_clone
-                        .upload_part()
-                        .bucket(bucket_name_clone)
-                        .key(object_name_clone)
-                        .upload_id(upload_id_clone)
-                        .part_number(part_number as i32)
-                        .body(ByteStream::from(bytes))
-                        .send()
-                        .await,
-                )
-            });
-
-            futures.push(future);
-            buffer = vec![0; 5_242_880];
         }
+
+        let mut bytes = vec![];
+        std::mem::swap(&mut data_part_buffer, &mut bytes);
+
+        let client_clone = self.client.clone();
+        let counter_clone = counter.clone();
+        let upload_id_clone = upload_id.clone();
+        let object_name_clone = object_name.clone();
+        let bucket_name_clone = bucket_name.clone();
+
+        let future = tokio::spawn(async move {
+            let part_number = counter_clone.fetch_add(1, Ordering::SeqCst);
+
+            (
+                part_number,
+                client_clone
+                    .upload_part()
+                    .bucket(bucket_name_clone)
+                    .key(object_name_clone)
+                    .upload_id(upload_id_clone)
+                    .part_number(part_number as i32)
+                    .body(ByteStream::from(bytes))
+                    .send()
+                    .await,
+            )
+        });
+
+        futures.push(future);
 
         let mut e_tags = vec![];
 
@@ -147,6 +182,8 @@ impl Minio {
         let completed_parts = e_tags
             .into_iter()
             .map(|(e_tag, part_number)| {
+                println!("{} : {} ", e_tag, part_number);
+
                 CompletedPart::builder()
                     .e_tag(e_tag)
                     .part_number(part_number as i32)
@@ -174,22 +211,34 @@ impl Minio {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::Rng;
     use tokio::fs::*;
 
     #[tokio::test]
     async fn test_new() {
+        let mut rng = rand::thread_rng();
+
         let url = "http://127.0.0.1:9000";
 
         let minio = Minio::new(url).await;
 
-        let file = File::open("../mongor/test_data/shark-0.png").await.unwrap();
+        let mut data = vec![];
+
+        for _ in 0..25_000_000 {
+            data.push(rng.gen_range(0..255) as u8);
+        }
+
+        let file_path = "./test.txt";
+        tokio::fs::write(file_path, data).await.unwrap();
+
+        let file = File::open(file_path).await.unwrap();
 
         let bucket_name = "test";
 
         minio.create_bucket(bucket_name).await.unwrap();
 
         minio
-            .upload_object(bucket_name, "shark.png", file)
+            .upload_object(bucket_name, "test.txt", file)
             .await
             .unwrap();
     }
