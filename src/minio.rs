@@ -10,7 +10,11 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
-use tokio::io::{AsyncRead, AsyncReadExt};
+use tokio::io::{AsyncBufRead, AsyncRead, AsyncReadExt};
+
+use crate::core::upload::{
+    abort_multipart_upload, complete_multipart_upload, start_multipart_upload, upload, upload_part,
+};
 
 pub struct Minio {
     pub client: Arc<Client>,
@@ -24,6 +28,22 @@ impl Minio {
         Self {
             client: Arc::new(client),
         }
+    }
+
+    pub async fn get_object(
+        &self,
+        bucket_name: &str,
+        object_name: &str,
+    ) -> Result<Option<impl AsyncBufRead>, Box<dyn std::error::Error>> {
+        let get_result = self
+            .client
+            .get_object()
+            .bucket(bucket_name)
+            .key(object_name)
+            .send()
+            .await?;
+
+        Ok(Some(get_result.body.into_async_read()))
     }
 
     pub async fn create_bucket(
@@ -54,15 +74,7 @@ impl Minio {
         let bucket_name = bucket_name.to_string();
         let object_name = object_name.to_string();
 
-        let upload_id = self
-            .client
-            .create_multipart_upload()
-            .bucket(&bucket_name)
-            .key(&object_name)
-            .send()
-            .await?
-            .upload_id
-            .unwrap();
+        let upload_id = start_multipart_upload(&self.client, &bucket_name, &object_name).await?;
 
         let mut futures = vec![];
 
@@ -75,21 +87,10 @@ impl Minio {
 
             if bytes_read == 0 {
                 if futures.is_empty() && data_part_buffer.len() < 5_242_880 {
-                    self.client
-                        .abort_multipart_upload()
-                        .bucket(&bucket_name)
-                        .key(&object_name)
-                        .upload_id(&upload_id)
-                        .send()
+                    abort_multipart_upload(&self.client, &bucket_name, &object_name, &upload_id)
                         .await?;
 
-                    self.client
-                        .put_object()
-                        .bucket(&bucket_name)
-                        .key(&object_name)
-                        .body(ByteStream::from(buffer[..bytes_read].to_vec()))
-                        .send()
-                        .await?;
+                    upload(&self.client, &bucket_name, &object_name, data_part_buffer).await?;
 
                     return Ok(());
                 }
@@ -99,6 +100,10 @@ impl Minio {
 
             data_part_buffer.extend_from_slice(&buffer[..bytes_read]);
             buffer = vec![0; 100_000];
+
+            fn spawn_part_future() {
+                // TODO
+            }
 
             if data_part_buffer.len() >= 5_242_880 {
                 let mut bytes = vec![];
@@ -115,15 +120,15 @@ impl Minio {
 
                     (
                         part_number,
-                        client_clone
-                            .upload_part()
-                            .bucket(bucket_name_clone)
-                            .key(object_name_clone)
-                            .upload_id(upload_id_clone)
-                            .part_number(part_number as i32)
-                            .body(ByteStream::from(bytes))
-                            .send()
-                            .await,
+                        upload_part(
+                            &client_clone,
+                            &bucket_name_clone,
+                            &object_name_clone,
+                            &upload_id_clone,
+                            part_number,
+                            bytes,
+                        )
+                        .await,
                     )
                 });
 
@@ -179,29 +184,7 @@ impl Minio {
             }
         }
 
-        let completed_parts = e_tags
-            .into_iter()
-            .map(|(e_tag, part_number)| {
-                println!("{} : {} ", e_tag, part_number);
-
-                CompletedPart::builder()
-                    .e_tag(e_tag)
-                    .part_number(part_number as i32)
-                    .build()
-            })
-            .collect::<Vec<CompletedPart>>();
-
-        let completed_multipart_upload = CompletedMultipartUpload::builder()
-            .set_parts(Some(completed_parts))
-            .build();
-
-        self.client
-            .complete_multipart_upload()
-            .bucket(&bucket_name)
-            .key(&object_name)
-            .multipart_upload(completed_multipart_upload)
-            .upload_id(upload_id)
-            .send()
+        complete_multipart_upload(&self.client, e_tags, &bucket_name, &object_name, &upload_id)
             .await?;
 
         Ok(())
