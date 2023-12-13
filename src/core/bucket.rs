@@ -12,17 +12,6 @@ pub async fn list_buckets(client: &Client) -> Result<Option<Vec<Bucket>>, Error>
         .buckets)
 }
 
-pub async fn create_bucket(client: &Client, bucket_name: &str) -> Result<(), Error> {
-    client
-        .create_bucket()
-        .bucket(bucket_name)
-        .send()
-        .await
-        .map_err(|err| Error::sdk(err))?;
-
-    Ok(())
-}
-
 pub async fn bucket_exists(client: &Client, bucket_name: &str) -> Result<bool, Error> {
     if let Some(buckets) = list_buckets(client).await? {
         if buckets
@@ -34,4 +23,34 @@ pub async fn bucket_exists(client: &Client, bucket_name: &str) -> Result<bool, E
     }
 
     Ok(false)
+}
+
+pub async fn create_bucket(client: &Client, bucket_name: &str) -> Result<Option<()>, Error> {
+    if bucket_exists(client, bucket_name).await? {
+        return Ok(None);
+    }
+
+    client
+        .create_bucket()
+        .bucket(bucket_name)
+        .send()
+        .await
+        .map_err(|err| Error::sdk(err))?;
+
+    Ok(Some(()))
+}
+
+pub async fn delete_bucket(client: &Client, bucket_name: &str) -> Result<Option<()>, Error> {
+    if bucket_exists(client, bucket_name).await? {
+        return Ok(None);
+    }
+
+    client
+        .delete_bucket()
+        .bucket(bucket_name)
+        .send()
+        .await
+        .map_err(|err| Error::sdk(err))?;
+
+    Ok(Some(()))
 }
