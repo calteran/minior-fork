@@ -2,19 +2,10 @@
 
 use crate::error::Error;
 use aws_sdk_s3::{
-    operation::create_bucket::CreateBucketOutput,
-    primitives::{ByteStream, ByteStreamError},
+    primitives::ByteStream,
     types::{CompletedMultipartUpload, CompletedPart},
     Client,
 };
-use std::{
-    future::Future,
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    },
-};
-use tokio::io::{AsyncBufRead, AsyncRead, AsyncReadExt};
 
 pub async fn upload(
     client: &Client,
@@ -29,7 +20,7 @@ pub async fn upload(
         .body(ByteStream::from(bytes))
         .send()
         .await
-        .map_err(|err| Error::SdkError(format!("{:?}", err)))?;
+        .map_err(|err| Error::sdk(err))?;
 
     Ok(())
 }
@@ -45,7 +36,7 @@ pub async fn start_multipart_upload(
         .key(object_name)
         .send()
         .await
-        .map_err(|err| Error::SdkError(format!("{:?}", err)))?
+        .map_err(|err| Error::sdk(err))?
         .upload_id
         .ok_or(Error::internal(
             "upload_id was None for a valid multipart call",
@@ -65,7 +56,7 @@ pub async fn abort_multipart_upload(
         .upload_id(upload_id)
         .send()
         .await
-        .map_err(|err| Error::SdkError(format!("{:?}", err)))?;
+        .map_err(|err| Error::sdk(err))?;
 
     Ok(())
 }
@@ -87,11 +78,9 @@ pub async fn upload_part(
         .body(ByteStream::from(bytes))
         .send()
         .await
-        .map_err(|err| Error::SdkError(format!("{:?}", err)))?
+        .map_err(|err| Error::sdk(err))?
         .e_tag
-        .ok_or(Error::internal(
-            "e_tag was None on successful part upload call",
-        ))
+        .ok_or(Error::internal("e_tag was None on upload_part"))
 }
 
 pub async fn complete_multipart_upload(
@@ -123,7 +112,7 @@ pub async fn complete_multipart_upload(
         .upload_id(upload_id)
         .send()
         .await
-        .map_err(|err| Error::SdkError(format!("{:?}", err)))?;
+        .map_err(|err| Error::sdk(err))?;
 
     Ok(())
 }
