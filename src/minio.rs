@@ -38,7 +38,7 @@ impl Minio {
         &self,
         bucket_name: &str,
         object_name: &str,
-    ) -> Result<Option<impl AsyncBufRead>, Error> {
+    ) -> Result<impl AsyncBufRead, Error> {
         get_object(&self.client, bucket_name, object_name).await
     }
 
@@ -49,7 +49,7 @@ impl Minio {
         new_object_name: &str,
         buffer_size: Option<usize>,
         data_part_size: Option<usize>,
-    ) -> Result<Option<()>, Error> {
+    ) -> Result<(), Error> {
         copy_object(
             &self.client,
             bucket_name,

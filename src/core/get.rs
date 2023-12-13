@@ -8,14 +8,14 @@ pub async fn get_object(
     client: &Client,
     bucket_name: &str,
     object_name: &str,
-) -> Result<Option<impl AsyncBufRead>, Error> {
-    let get_result = client
+) -> Result<impl AsyncBufRead, Error> {
+    Ok(client
         .get_object()
         .bucket(bucket_name)
         .key(object_name)
         .send()
         .await
-        .map_err(|err| Error::sdk(err))?;
-
-    Ok(Some(get_result.body.into_async_read()))
+        .map_err(|err| Error::sdk(err))?
+        .body
+        .into_async_read())
 }

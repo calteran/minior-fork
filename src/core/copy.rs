@@ -11,20 +11,18 @@ pub async fn copy_object(
     new_object_name: &str,
     buffer_size: Option<usize>,
     data_part_size: Option<usize>,
-) -> Result<Option<()>, Error> {
-    if let Some(data_stream) = get_object(client, bucket_name, object_name).await? {
-        upload_object(
-            client,
-            bucket_name,
-            new_object_name,
-            data_stream,
-            buffer_size,
-            data_part_size,
-        )
-        .await?;
+) -> Result<(), Error> {
+    let data_stream = get_object(client, bucket_name, object_name).await?;
 
-        return Ok(Some(()));
-    }
+    upload_object(
+        client,
+        bucket_name,
+        new_object_name,
+        data_stream,
+        buffer_size,
+        data_part_size,
+    )
+    .await?;
 
-    Ok(None)
+    Ok(())
 }
