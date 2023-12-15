@@ -1,7 +1,7 @@
 // Authors: Robert Lopez
 
 use crate::{
-    core::{bucket::*, copy::copy_object, get::*, upload::upload_object::*},
+    core::{bucket::*, get::*, upload::upload_object::*},
     error::Error,
 };
 use aws_sdk_s3::{types::Bucket, Client};
@@ -40,25 +40,6 @@ impl Minio {
         object_name: &str,
     ) -> Result<impl AsyncBufRead, Error> {
         get_object(&self.client, bucket_name, object_name).await
-    }
-
-    pub async fn copy_object(
-        &self,
-        bucket_name: &str,
-        object_name: &str,
-        new_object_name: &str,
-        buffer_size: Option<usize>,
-        data_part_size: Option<usize>,
-    ) -> Result<(), Error> {
-        copy_object(
-            &self.client,
-            bucket_name,
-            object_name,
-            new_object_name,
-            buffer_size,
-            data_part_size,
-        )
-        .await
     }
 
     pub async fn upload_object<S>(
