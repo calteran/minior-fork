@@ -1,7 +1,7 @@
 // Authors: Robert Lopez
 
 use crate::{
-    core::{bucket::*, copy::copy_object, get::*, upload::*},
+    core::{bucket::*, copy::copy_object, get::*, upload::upload_object::*},
     error::Error,
 };
 use aws_sdk_s3::{types::Bucket, Client};

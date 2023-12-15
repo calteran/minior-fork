@@ -1,6 +1,6 @@
 // Authors: Robert Lopez
 
-use super::{get::get_object, upload::upload_object};
+use super::{get::get_object, upload::upload_object::*};
 use crate::error::Error;
 use aws_sdk_s3::Client;
 
