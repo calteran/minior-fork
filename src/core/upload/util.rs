@@ -109,6 +109,34 @@ pub async fn upload_part(
         .ok_or(Error::internal("e_tag was None on upload_part"))
 }
 
+pub async fn upload_part_presigned(
+    client: &Client,
+    bucket_name: &str,
+    object_name: &str,
+    upload_id: &str,
+    part_number: usize,
+    presigned_expiry: Option<u64>,
+) -> Result<PresignedRequest, Error> {
+    let presigning_config = if let Some(expiration_seconds) = presigned_expiry {
+        PresigningConfig::builder()
+            .expires_in(Duration::from_secs(expiration_seconds))
+            .build()
+    } else {
+        PresigningConfig::builder().build()
+    }
+    .map_err(|err| Error::sdk(err))?;
+
+    Ok(client
+        .upload_part()
+        .bucket(bucket_name)
+        .key(object_name)
+        .upload_id(upload_id)
+        .part_number(part_number as i32)
+        .presigned(presigning_config)
+        .await
+        .map_err(|err| Error::sdk(err))?)
+}
+
 pub async fn complete_multipart_upload(
     client: &Client,
     e_tags: Vec<(String, usize)>,
