@@ -29,9 +29,9 @@ pub async fn bucket_exists(client: &Client, bucket_name: &str) -> Result<bool, E
     Ok(false)
 }
 
-pub async fn create_bucket(client: &Client, bucket_name: &str) -> Result<Option<()>, Error> {
+pub async fn create_bucket(client: &Client, bucket_name: &str) -> Result<bool, Error> {
     if bucket_exists(client, bucket_name).await? {
-        return Ok(None);
+        return Ok(false);
     }
 
     client
@@ -41,12 +41,12 @@ pub async fn create_bucket(client: &Client, bucket_name: &str) -> Result<Option<
         .await
         .map_err(|err| Error::sdk(err))?;
 
-    Ok(Some(()))
+    Ok(true)
 }
 
-pub async fn delete_bucket(client: &Client, bucket_name: &str) -> Result<Option<()>, Error> {
+pub async fn delete_bucket(client: &Client, bucket_name: &str) -> Result<bool, Error> {
     if bucket_exists(client, bucket_name).await? {
-        return Ok(None);
+        return Ok(false);
     }
 
     client
@@ -56,5 +56,5 @@ pub async fn delete_bucket(client: &Client, bucket_name: &str) -> Result<Option<
         .await
         .map_err(|err| Error::sdk(err))?;
 
-    Ok(Some(()))
+    Ok(true)
 }

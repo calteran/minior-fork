@@ -107,7 +107,7 @@ impl Minio {
 
     /// Creates a new bucket named `bucket_name`
     ///
-    /// Returns `Ok(None)` if the bucket already existed
+    /// Returns `false` if bucket already existed
     ///
     /// ---
     /// Example Usage:
@@ -115,15 +115,15 @@ impl Minio {
     ///
     /// let minio: Minio = ...;
     ///
-    /// let bucket_created = minio.create_bucket("sharks").await?.is_some();
+    /// let bucket_created: bool = minio.create_bucket("sharks").await?;
     /// ```
-    pub async fn create_bucket(&self, bucket_name: &str) -> Result<Option<()>, Error> {
+    pub async fn create_bucket(&self, bucket_name: &str) -> Result<bool, Error> {
         create_bucket(&self.client, bucket_name).await
     }
 
     /// Deletes a bucket by `bucket_name`
     ///
-    /// Returns `Ok(None)` if the bucket did not exist
+    /// Returns `false` if the bucket did not exist
     ///
     /// ---
     /// Example Usage:
@@ -131,9 +131,9 @@ impl Minio {
     ///
     /// let minio: Minio = ...;
     ///
-    /// let bucket_deleted = minio.delete_bucket("sharks").await?.is_some();
+    /// let bucket_deleted: bool = minio.delete_bucket("sharks").await?;
     /// ```
-    pub async fn delete_bucket(&self, bucket_name: &str) -> Result<Option<()>, Error> {
+    pub async fn delete_bucket(&self, bucket_name: &str) -> Result<bool, Error> {
         delete_bucket(&self.client, bucket_name).await
     }
 
