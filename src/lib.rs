@@ -185,6 +185,30 @@ impl Minio {
         get_object_presigned(&self.client, bucket_name, object_name, presigned_expiry).await
     }
 
+    /// Upload a object named `object_name` to the bucket named `bucket_name`
+    ///
+    /// Default `buffer_size` is `100_000`, and cannot be
+    /// lower than `4_096`
+    ///
+    /// Default `data_part_size` is `5_242_880`, and cannot
+    /// be lower than that value
+    ///
+    /// ---
+    /// Example Usage:
+    /// ```
+    ///
+    /// let minio: Minio = ...;
+    /// let shark_image: tokio::fs::File = ...;
+    ///
+    /// minio.upload_object(
+    ///       "sharks",
+    ///       "shark.jpg",
+    ///       shark_image,
+    ///       None,
+    ///       None,
+    ///   )
+    ///   .await?;
+    /// ```
     pub async fn upload_object<S>(
         &self,
         bucket_name: &str,
@@ -207,6 +231,28 @@ impl Minio {
         .await
     }
 
+    /// Constructs a `PresignedUploadManager` for a presigned object upload
+    /// by `object_name` and `bucket_name`.
+    ///
+    /// The manager can be used to obtain multiple `PresignedRequest` for parts,
+    /// and can complete/abort the upload.
+    ///
+    /// Note that `presigned_expiry` is applied to each individual part `PresignedRequest`.
+    ///
+    /// See `core::upload::upload_object_presigned::PresignedUploadManager` for more details.
+    ///
+    /// ---
+    /// Example Usage:
+    /// ```
+    ///
+    /// let minio: Minio = ...;
+    ///
+    /// let mut upload_manager: PresignedUploadManager = minio.upload_object_presigned(
+    ///     "sharks",
+    ///     "shark.jpg",
+    ///     Some(3_600),
+    /// ).await?;
+    /// ```
     pub async fn upload_object_presigned<'uop>(
         &self,
         bucket_name: &'uop str,
