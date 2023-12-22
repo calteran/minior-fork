@@ -3,23 +3,27 @@
 use crate::error::Error;
 use aws_sdk_s3::{types::Bucket, Client};
 
-pub async fn list_buckets(client: &Client) -> Result<Option<Vec<Bucket>>, Error> {
-    Ok(client
+pub async fn list_buckets(client: &Client) -> Result<Vec<Bucket>, Error> {
+    if let Some(buckets) = client
         .list_buckets()
         .send()
         .await
         .map_err(|err| Error::sdk(err))?
-        .buckets)
+        .buckets
+    {
+        Ok(buckets)
+    } else {
+        Ok(vec![])
+    }
 }
 
 pub async fn bucket_exists(client: &Client, bucket_name: &str) -> Result<bool, Error> {
-    if let Some(buckets) = list_buckets(client).await? {
-        if buckets
-            .iter()
-            .any(|bucket| bucket.name.as_ref().unwrap() == bucket_name)
-        {
-            return Ok(true);
-        }
+    if list_buckets(client)
+        .await?
+        .iter()
+        .any(|bucket| bucket.name.as_ref().unwrap() == bucket_name)
+    {
+        return Ok(true);
     }
 
     Ok(false)
