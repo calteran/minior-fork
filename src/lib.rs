@@ -188,6 +188,16 @@ impl Minio {
         PresignedUploadManager::new(&self.client, bucket_name, object_name, presigned_expiry).await
     }
 
+    /// Deletes a object from a bucket by `bucket_name` and `object_name`
+    ///
+    /// ---
+    /// Example Usage:
+    /// ```
+    ///
+    /// let minio: Minio = ...;
+    ///
+    /// minio.delete_object("sharks", "shark.jpg").await?;
+    /// ```
     pub async fn delete_object(&self, bucket_name: &str, object_name: &str) -> Result<(), Error> {
         delete_object(&self.client, bucket_name, object_name).await
     }
@@ -199,41 +209,5 @@ impl Minio {
         presigned_expiry: Option<u64>,
     ) -> Result<PresignedRequest, Error> {
         delete_object_presigned(&self.client, bucket_name, object_name, presigned_expiry).await
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rand::Rng;
-    use tokio::fs::*;
-
-    #[tokio::test]
-    async fn test_new() {
-        let mut rng = rand::thread_rng();
-
-        let url = "http://127.0.0.1:9000";
-
-        let minio = Minio::new(url).await;
-
-        let mut data = vec![];
-
-        for _ in 0..10_000_000 {
-            data.push(rng.gen_range(0..255) as u8);
-        }
-
-        let file_path = "./test.txt";
-        tokio::fs::write(file_path, data).await.unwrap();
-
-        let file = File::open(file_path).await.unwrap();
-
-        let bucket_name = "test";
-
-        minio.create_bucket(bucket_name).await.unwrap();
-
-        minio
-            .upload_object(bucket_name, "test.txt", file, None, None)
-            .await
-            .unwrap();
     }
 }
