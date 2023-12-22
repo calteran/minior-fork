@@ -140,6 +140,19 @@ impl Minio {
         delete_bucket(&self.client, bucket_name).await
     }
 
+    /// Returns a stream for an object by `bucket_name` and `object_name`
+    ///
+    /// ---
+    /// Example Usage:
+    /// ```
+    ///
+    /// let minio: Minio = ...;
+    ///
+    /// let stream: impl AsyncBufRead = minio.get_object(
+    ///     "sharks",
+    ///     "shark.jpg",
+    /// ).await?;
+    /// ```
     pub async fn get_object(
         &self,
         bucket_name: &str,
@@ -148,6 +161,21 @@ impl Minio {
         get_object(&self.client, bucket_name, object_name).await
     }
 
+    /// Generates a `PresignedRequest` from a bucket by `bucket_name` and `object_name`
+    /// to get the object.
+    ///
+    /// ---
+    /// Example Usage:
+    /// ```
+    ///
+    /// let minio: Minio = ...;
+    ///
+    /// let request: PresignedRequest = minio.get_object_presigned(
+    ///     "sharks",
+    ///     "shark.jpg",
+    ///     Some(3_600),
+    /// ).await?;
+    /// ```
     pub async fn get_object_presigned(
         &self,
         bucket_name: &str,
@@ -202,6 +230,21 @@ impl Minio {
         delete_object(&self.client, bucket_name, object_name).await
     }
 
+    /// Generates a `PresignedRequest` from a bucket by `bucket_name` and `object_name`
+    /// to delete the object.
+    ///
+    /// ---
+    /// Example Usage:
+    /// ```
+    ///
+    /// let minio: Minio = ...;
+    ///
+    /// let request: PresignedRequest = minio.delete_object_presigned(
+    ///     "sharks",
+    ///     "shark.jpg",
+    ///     Some(3_600),
+    /// ).await?;
+    /// ```
     pub async fn delete_object_presigned(
         &self,
         bucket_name: &str,
