@@ -34,18 +34,21 @@ impl<'pum> PresignedUploadManager<'pum> {
         })
     }
 
-    pub async fn next_part(&mut self, client: &Client) -> Result<PresignedRequest, Error> {
+    pub async fn next_part(&mut self, client: &Client) -> Result<(PresignedRequest, usize), Error> {
         let part_number = self.part_index.fetch_add(1, Ordering::SeqCst);
 
-        upload_part_presigned(
-            client,
-            self.bucket_name,
-            self.object_name,
-            &self.upload_id,
+        Ok((
+            upload_part_presigned(
+                client,
+                self.bucket_name,
+                self.object_name,
+                &self.upload_id,
+                part_number,
+                self.presigned_expiry,
+            )
+            .await?,
             part_number,
-            self.presigned_expiry,
-        )
-        .await
+        ))
     }
 
     pub async fn abort(&self, client: &Client) -> Result<(), Error> {
