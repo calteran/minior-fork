@@ -3,6 +3,18 @@
 use crate::error::Error;
 use aws_sdk_s3::{types::Bucket, Client};
 
+/// Returns a vector of `Bucket`s from the client
+///
+/// ---
+/// Example Usage:
+/// ```
+///
+/// let client: Client = ...;
+///
+/// for bucket in list_buckets(&client).await? {
+///     ...
+/// }
+/// ```
 pub async fn list_buckets(client: &Client) -> Result<Vec<Bucket>, Error> {
     if let Some(buckets) = client
         .list_buckets()
@@ -17,6 +29,18 @@ pub async fn list_buckets(client: &Client) -> Result<Vec<Bucket>, Error> {
     }
 }
 
+/// Returns true if a bucket by `bucket_name` exists
+///
+/// ---
+/// Example Usage:
+/// ```
+///
+/// let client: Client = ...;
+///
+/// if bucket_exists(&client, "sharks").await? {
+///     ...
+/// }
+/// ```
 pub async fn bucket_exists(client: &Client, bucket_name: &str) -> Result<bool, Error> {
     if list_buckets(client)
         .await?
@@ -29,6 +53,18 @@ pub async fn bucket_exists(client: &Client, bucket_name: &str) -> Result<bool, E
     Ok(false)
 }
 
+/// Creates a new bucket named `bucket_name`
+///
+/// Returns `false` if bucket already existed
+///
+/// ---
+/// Example Usage:
+/// ```
+///
+/// let client: Client = ...;
+///
+/// let bucket_created: bool = create_bucket(&client, "sharks").await?;
+/// ```
 pub async fn create_bucket(client: &Client, bucket_name: &str) -> Result<bool, Error> {
     if bucket_exists(client, bucket_name).await? {
         return Ok(false);
@@ -44,6 +80,18 @@ pub async fn create_bucket(client: &Client, bucket_name: &str) -> Result<bool, E
     Ok(true)
 }
 
+/// Deletes a bucket by `bucket_name`
+///
+/// Returns `false` if the bucket did not exist
+///
+/// ---
+/// Example Usage:
+/// ```
+///
+/// let client: Client = ...;
+///
+/// let bucket_deleted: bool = delete_bucket(&client, "sharks").await?;
+/// ```
 pub async fn delete_bucket(client: &Client, bucket_name: &str) -> Result<bool, Error> {
     if bucket_exists(client, bucket_name).await? {
         return Ok(false);

@@ -8,6 +8,20 @@ use aws_sdk_s3::{
 use std::time::Duration;
 use tokio::io::AsyncBufRead;
 
+/// Returns a stream for an object by `bucket_name` and `object_name`
+///
+/// ---
+/// Example Usage:
+/// ```
+///
+/// let client: Client = ...;
+///
+/// let stream: impl AsyncBufRead = get_object(
+///     &client,
+///     "sharks",
+///     "shark.jpg",
+/// ).await?;
+/// ```
 pub async fn get_object(
     client: &Client,
     bucket_name: &str,
@@ -24,6 +38,22 @@ pub async fn get_object(
         .into_async_read())
 }
 
+/// Generates a `PresignedRequest` from a bucket by `bucket_name` and `object_name`
+/// to get the object.
+///
+/// ---
+/// Example Usage:
+/// ```
+///
+/// let client: Client = ...;
+///
+/// let request: PresignedRequest = get_object_presigned(
+///     &client,
+///     "sharks",
+///     "shark.jpg",
+///     Some(3_600),
+/// ).await?;
+/// ```
 pub async fn get_object_presigned(
     client: &Client,
     bucket_name: &str,

@@ -193,6 +193,9 @@ impl Minio {
     /// Default `data_part_size` is `5_242_880`, and cannot
     /// be lower than that value
     ///
+    /// Will automatically convert to a multipart upload if over `data_part_size`
+    /// bytes
+    ///
     /// ---
     /// Example Usage:
     /// ```
@@ -201,11 +204,11 @@ impl Minio {
     /// let shark_image: tokio::fs::File = ...;
     ///
     /// minio.upload_object(
-    ///       "sharks",
-    ///       "shark.jpg",
-    ///       shark_image,
-    ///       None,
-    ///       None,
+    ///     "sharks",
+    ///     "shark.jpg",
+    ///     shark_image,
+    ///     None,
+    ///     None,
     ///   )
     ///   .await?;
     /// ```

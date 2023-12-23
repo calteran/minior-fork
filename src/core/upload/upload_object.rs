@@ -9,13 +9,34 @@ use std::sync::{
 };
 use tokio::io::{AsyncRead, AsyncReadExt};
 
-/// Assumes `bucket_name` exists
+/// Upload a object named `object_name` to the bucket named `bucket_name`
 ///
-/// Default buffer size is `100_000`, and cannot be
+/// Default `buffer_size` is `100_000`, and cannot be
 /// lower than `4_096`
 ///
-/// Default data_part_size is `5_242_880`, and cannot
+/// Default `data_part_size` is `5_242_880`, and cannot
 /// be lower than that value
+///
+/// Will automatically convert to a multipart upload if over `data_part_size`
+/// bytes
+///
+/// ---
+/// Example Usage:
+/// ```
+///
+/// let client: Client = ...;
+/// let shark_image: tokio::fs::File = ...;
+///
+/// upload_object(
+///     &client,
+///     "sharks",
+///     "shark.jpg",
+///     shark_image,
+///     None,
+///     None,
+///   )
+///   .await?;
+/// ```
 pub async fn upload_object<S>(
     client: &Client,
     bucket_name: &str,

@@ -7,6 +7,20 @@ use aws_sdk_s3::{
 };
 use std::time::Duration;
 
+/// Deletes a object from a bucket by `bucket_name` and `object_name`
+///
+/// ---
+/// Example Usage:
+/// ```
+///
+/// let client: Client = ...;
+///
+/// delete_object(
+///     &client,
+///     "sharks",
+///     "shark.jpg",
+/// ).await?;
+/// ```
 pub async fn delete_object(
     client: &Client,
     bucket_name: &str,
@@ -23,6 +37,22 @@ pub async fn delete_object(
     Ok(())
 }
 
+/// Generates a `PresignedRequest` from a bucket by `bucket_name` and `object_name`
+/// to delete the object.
+///
+/// ---
+/// Example Usage:
+/// ```
+///
+/// let client: Client = ...;
+///
+/// let request: PresignedRequest = delete_object_presigned(
+///     &client,
+///     "sharks",
+///     "shark.jpg",
+///     Some(3_600),
+/// ).await?;
+/// ```
 pub async fn delete_object_presigned(
     client: &Client,
     bucket_name: &str,
