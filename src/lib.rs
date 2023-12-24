@@ -3,6 +3,9 @@
 pub mod core;
 pub mod error;
 
+#[cfg(test)]
+mod tests;
+
 use crate::{
     core::{
         bucket::*,
