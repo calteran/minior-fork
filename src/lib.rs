@@ -79,6 +79,8 @@ impl Minio {
         }
     }
 
+    pub async fn list_bucket_objects(&self, bucket_name: &str) {}
+
     /// Returns true if a bucket by `bucket_name` exists
     ///
     /// ---
@@ -131,16 +133,23 @@ impl Minio {
     ///
     /// Returns `false` if the bucket did not exist
     ///
+    /// If `delete_objects` is `true`, will also attempt to delete
+    /// all objects in the bucket.
+    ///
     /// ---
     /// Example Usage:
     /// ```
     ///
     /// let minio: Minio = ...;
     ///
-    /// let bucket_deleted: bool = minio.delete_bucket("sharks").await?;
+    /// let bucket_deleted: bool = minio.delete_bucket("sharks", false).await?;
     /// ```
-    pub async fn delete_bucket(&self, bucket_name: &str) -> Result<bool, Error> {
-        delete_bucket(&self.client, bucket_name).await
+    pub async fn delete_bucket(
+        &self,
+        bucket_name: &str,
+        delete_objects: bool,
+    ) -> Result<bool, Error> {
+        delete_bucket(&self.client, bucket_name, delete_objects).await
     }
 
     /// Returns a stream for an object by `bucket_name` and `object_name`

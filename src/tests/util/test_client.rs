@@ -27,7 +27,7 @@ impl TestClient {
 
     pub async fn drop(&self) {
         self.minio
-            .delete_bucket(&self.bucket_name)
+            .delete_bucket(&self.bucket_name, true)
             .await
             .expect(&format!("Failed to delete bucket: {}", self.bucket_name));
     }
