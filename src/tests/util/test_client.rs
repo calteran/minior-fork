@@ -1,41 +1,45 @@
 // Authors: Robert Lopez
 
-use super::get_test_file;
 use crate::Minio;
 use std::{future::Future, sync::Arc};
 use uuid::Uuid;
 
 pub struct TestClient {
-    pub minio: Minio,
+    pub minio: Arc<Minio>,
     pub bucket_name: String,
 }
 
 impl TestClient {
     pub async fn new() -> Self {
+        let bucket_name = Uuid::new_v4().to_string();
+        let minio = Minio::new("http://127.0.0.1:9000").await;
+
+        minio
+            .create_bucket(&bucket_name)
+            .await
+            .expect(&format!("Failed to create bucket: {}", bucket_name));
+
         Self {
-            minio: Minio::new("http://127.0.0.1:9000").await,
-            bucket_name: Uuid::new_v4().to_string(),
+            minio: Arc::new(minio),
+            bucket_name,
         }
     }
 
-    pub async fn drop(self) {
+    pub async fn drop(&self) {
         self.minio
             .delete_bucket(&self.bucket_name)
             .await
             .expect(&format!("Failed to delete bucket: {}", self.bucket_name));
     }
 
-    pub async fn upload(
-        &self,
-        file_name: &str,
-        object_name: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let file = get_test_file(file_name).await?;
+    pub async fn run_test<T, Fut>(self, test: T) -> Result<(), Box<dyn std::error::Error>>
+    where
+        T: FnOnce(Arc<Minio>, String) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn std::error::Error>>>,
+    {
+        let result = test(self.minio.clone(), self.bucket_name.clone()).await;
+        self.drop().await;
 
-        self.minio
-            .upload_object(&self.bucket_name, object_name, file, None, None)
-            .await?;
-
-        Ok(())
+        result
     }
 }
