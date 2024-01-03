@@ -33,8 +33,8 @@ async fn test_upload_get() {
 
 #[tokio::test]
 async fn test_upload_get_presigned() {
-    let object_name = "shark.png";
-    let object_mime = "image/x-png";
+    let object_name = "text.txt";
+    let object_mime = "text/plain";
     let test_client = TestClient::new().await;
 
     test_client
@@ -73,11 +73,20 @@ async fn test_upload_get_presigned() {
 
             upload_manager.complete(&minio.client, e_tags).await?;
 
-            // let downloaded_data = read_file_stream(file_stream).await?;
+            let get_request = minio
+                .get_object_presigned(&bucket_name, object_name, Some(1_337))
+                .await?;
 
-            // if file_bytes != downloaded_data {
-            //     test_error!("Uploaded bytes and retrieved bytes do not match");
-            // }
+            let url = get_request.uri();
+
+            let file_bytes = get_test_file_bytes(object_name).await?;
+            let downloaded_data = client.get(url).send().await?.bytes().await?.to_vec();
+
+            println!("{:?} \n : \n {:?}", file_bytes, downloaded_data);
+
+            if file_bytes != downloaded_data {
+                test_error!("Uploaded bytes and retrieved bytes do not match");
+            }
 
             Ok(())
         })
