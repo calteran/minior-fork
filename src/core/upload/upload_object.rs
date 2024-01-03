@@ -1,7 +1,7 @@
 // Authors: Robert Lopez
 
 use super::util::*;
-use crate::error::Error;
+use crate::{error::Error, ETag};
 use aws_sdk_s3::Client;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -173,8 +173,8 @@ where
     for join_handle in join_handles {
         match join_handle.await {
             Ok((part_number, result)) => match result {
-                Ok(e_tag) => {
-                    e_tags.push((e_tag, part_number));
+                Ok(tag) => {
+                    e_tags.push(ETag { tag, part_number });
                 }
                 Err(err) => {
                     abort_multipart_upload(client, &bucket_name, &object_name, &upload_id).await?;

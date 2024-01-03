@@ -19,6 +19,12 @@ use aws_sdk_s3::{presigning::PresignedRequest, types::Bucket, Client};
 use std::sync::Arc;
 use tokio::io::{AsyncBufRead, AsyncRead};
 
+/// Represents an ETag used for multi-part uploads
+pub struct ETag {
+    pub tag: String,
+    pub part_number: usize,
+}
+
 /// Minio client utilizing the S3 API
 ///
 /// ---

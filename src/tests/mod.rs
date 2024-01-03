@@ -1,2 +1,2 @@
-pub mod upload;
+pub mod upload_get;
 pub mod util;

@@ -1,6 +1,6 @@
 // Authors: Robert Lopez
 
-use crate::error::Error;
+use crate::{error::Error, ETag};
 use aws_sdk_s3::{
     presigning::{PresignedRequest, PresigningConfig},
     primitives::ByteStream,
@@ -115,16 +115,16 @@ pub async fn upload_part_presigned(
 
 pub async fn complete_multipart_upload(
     client: &Client,
-    e_tags: Vec<(String, usize)>,
+    e_tags: Vec<ETag>,
     bucket_name: &str,
     object_name: &str,
     upload_id: &str,
 ) -> Result<(), Error> {
     let completed_parts = e_tags
         .into_iter()
-        .map(|(e_tag, part_number)| {
+        .map(|ETag { tag, part_number }| {
             CompletedPart::builder()
-                .e_tag(e_tag)
+                .e_tag(tag)
                 .part_number(part_number as i32)
                 .build()
         })

@@ -1,7 +1,7 @@
 // Authors: Robert Lopez
 
 use super::util::*;
-use crate::error::Error;
+use crate::{error::Error, ETag};
 use aws_sdk_s3::{presigning::PresignedRequest, Client};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -140,15 +140,11 @@ impl<'pum> PresignedUploadManager<'pum> {
     ///
     /// let mut upload_manager: PresignedUploadManager = ...;
     ///
-    /// let e_tags: Vec<(String, usize)> = ...;
+    /// let e_tags: Vec<ETag> = ...;
     ///
     /// upload_manager.complete(&client, e_tags).await?;
     /// ```
-    pub async fn complete(
-        &self,
-        client: &Client,
-        e_tags: Vec<(String, usize)>,
-    ) -> Result<(), Error> {
+    pub async fn complete(&self, client: &Client, e_tags: Vec<ETag>) -> Result<(), Error> {
         complete_multipart_upload(
             client,
             e_tags,
