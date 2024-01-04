@@ -91,16 +91,12 @@ pub async fn upload_part_presigned(
     object_name: &str,
     upload_id: &str,
     part_number: usize,
-    presigned_expiry: Option<u64>,
+    presigned_expiry: u64,
 ) -> Result<PresignedRequest, Error> {
-    let presigning_config = if let Some(expiration_seconds) = presigned_expiry {
-        PresigningConfig::builder()
-            .expires_in(Duration::from_secs(expiration_seconds))
-            .build()
-    } else {
-        PresigningConfig::builder().build()
-    }
-    .map_err(|err| Error::sdk(err))?;
+    let presigning_config = PresigningConfig::builder()
+        .expires_in(Duration::from_secs(presigned_expiry))
+        .build()
+        .map_err(|err| Error::sdk(err))?;
 
     Ok(client
         .upload_part()

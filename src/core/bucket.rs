@@ -1,12 +1,11 @@
 // Authors: Robert Lopez
 
+use super::delete::delete_object;
 use crate::error::Error;
 use aws_sdk_s3::{
     types::{Bucket, Object},
     Client,
 };
-
-use super::delete::delete_object;
 
 /// Returns a vector of `Bucket`s from the client
 ///

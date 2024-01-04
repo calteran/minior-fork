@@ -11,11 +11,16 @@ use crate::{
         bucket::*,
         delete::*,
         get::*,
-        upload::{upload_object::*, upload_object_presigned::PresignedUploadManager},
+        upload::{upload_object::*, upload_object_multi_presigned::PresignedUploadManager},
     },
     error::Error,
 };
-use aws_sdk_s3::{presigning::PresignedRequest, types::Bucket, Client};
+use aws_sdk_s3::{
+    presigning::PresignedRequest,
+    types::{Bucket, Object},
+    Client,
+};
+use core::upload::upload_object_presigned::upload_object_presigned;
 use std::sync::Arc;
 use tokio::io::{AsyncBufRead, AsyncRead};
 
@@ -55,7 +60,7 @@ pub struct ETag {
 /// let request: PresignedRequest = minio.get_object_presigned(
 ///     bucket_name,
 ///     object_name,
-///     Some(3_600),
+///     3_600,
 /// ).await?;
 /// ```
 pub struct Minio {
@@ -85,7 +90,19 @@ impl Minio {
         }
     }
 
-    pub async fn list_bucket_objects(&self, bucket_name: &str) {}
+    /// Lists `Object`s present in the given bucket by `bucket_name`
+    ///
+    /// ---
+    /// Example Usage:
+    /// ```
+    ///
+    /// let client: Client = ...;
+    ///
+    /// let bucket_objects: Vec<Object> = list_bucket_objects(&client, "sharks").await?;
+    /// ```
+    pub async fn list_bucket_objects(&self, bucket_name: &str) -> Result<Vec<Object>, Error> {
+        list_bucket_objects(&self.client, bucket_name).await
+    }
 
     /// Returns true if a bucket by `bucket_name` exists
     ///
@@ -191,14 +208,14 @@ impl Minio {
     /// let request: PresignedRequest = minio.get_object_presigned(
     ///     "sharks",
     ///     "shark.jpg",
-    ///     Some(3_600),
+    ///     3_600,
     /// ).await?;
     /// ```
     pub async fn get_object_presigned(
         &self,
         bucket_name: &str,
         object_name: &str,
-        presigned_expiry: Option<u64>,
+        presigned_expiry: u64,
     ) -> Result<PresignedRequest, Error> {
         get_object_presigned(&self.client, bucket_name, object_name, presigned_expiry).await
     }
@@ -252,6 +269,30 @@ impl Minio {
         .await
     }
 
+    /// Obtain a `PresignedRequest` for a object upload
+    ///
+    /// ---
+    /// Example Usage:
+    /// ```
+    ///
+    /// let client: Client = ...;
+    ///
+    /// let presigned_request: PresignedRequest = upload_presigned(
+    ///     &client,
+    ///     "bucket_name",
+    ///     "object_name",
+    ///     1_337,
+    /// ).await?;
+    /// ```
+    pub async fn upload_object_presigned(
+        &self,
+        bucket_name: &str,
+        object_name: &str,
+        presigned_expiry: u64,
+    ) -> Result<PresignedRequest, Error> {
+        upload_object_presigned(&self.client, bucket_name, object_name, presigned_expiry).await
+    }
+
     /// Constructs a `PresignedUploadManager` for a presigned object upload
     /// by `object_name` and `bucket_name`.
     ///
@@ -271,14 +312,14 @@ impl Minio {
     /// let mut upload_manager: PresignedUploadManager = minio.upload_object_presigned(
     ///     "sharks",
     ///     "shark.jpg",
-    ///     Some(3_600),
+    ///     3_600,
     /// ).await?;
     /// ```
-    pub async fn upload_object_presigned<'uop>(
+    pub async fn upload_object_multi_presigned<'uop>(
         &self,
         bucket_name: &'uop str,
         object_name: &'uop str,
-        presigned_expiry: Option<u64>,
+        presigned_expiry: u64,
     ) -> Result<PresignedUploadManager<'uop>, Error> {
         PresignedUploadManager::new(&self.client, bucket_name, object_name, presigned_expiry).await
     }
@@ -309,14 +350,14 @@ impl Minio {
     /// let request: PresignedRequest = minio.delete_object_presigned(
     ///     "sharks",
     ///     "shark.jpg",
-    ///     Some(3_600),
+    ///     3_600,
     /// ).await?;
     /// ```
     pub async fn delete_object_presigned(
         &self,
         bucket_name: &str,
         object_name: &str,
-        presigned_expiry: Option<u64>,
+        presigned_expiry: u64,
     ) -> Result<PresignedRequest, Error> {
         delete_object_presigned(&self.client, bucket_name, object_name, presigned_expiry).await
     }

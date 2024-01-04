@@ -51,23 +51,19 @@ pub async fn get_object(
 ///     &client,
 ///     "sharks",
 ///     "shark.jpg",
-///     Some(3_600),
+///     3_600,
 /// ).await?;
 /// ```
 pub async fn get_object_presigned(
     client: &Client,
     bucket_name: &str,
     object_name: &str,
-    presigned_expiry: Option<u64>,
+    presigned_expiry: u64,
 ) -> Result<PresignedRequest, Error> {
-    let presigning_config = if let Some(expiration_seconds) = presigned_expiry {
-        PresigningConfig::builder()
-            .expires_in(Duration::from_secs(expiration_seconds))
-            .build()
-    } else {
-        PresigningConfig::builder().build()
-    }
-    .map_err(|err| Error::sdk(err))?;
+    let presigning_config = PresigningConfig::builder()
+        .expires_in(Duration::from_secs(presigned_expiry))
+        .build()
+        .map_err(|err| Error::sdk(err))?;
 
     Ok(client
         .get_object()
