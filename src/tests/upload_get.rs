@@ -1,7 +1,7 @@
 // Authors: Robert Lopez
 
 use super::util::{test_client::TestClient, test_error::TestError, *};
-use crate::{error::Error, test_error, ETag, Minio};
+use crate::{error::Error, test_error, ETag};
 
 #[tokio::test]
 async fn test_upload_get() {
@@ -66,6 +66,40 @@ async fn test_upload_get_presigned() {
                 .bytes()
                 .await?
                 .to_vec();
+
+            if file_bytes != downloaded_bytes {
+                test_error!("Uploaded bytes and retrieved bytes do not match");
+            }
+
+            Ok(())
+        })
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn test_upload_multi_get() {
+    let object_name = "shark.png";
+    let test_client = TestClient::new().await;
+
+    test_client
+        .run_test(|minio, bucket_name| async move {
+            let file_bytes = get_test_file_bytes(object_name).await?;
+
+            let mut e_tags = vec![];
+
+            let mut upload_manager = minio.upload_object_multi(&bucket_name, object_name).await?;
+
+            let (tag, part_number) = upload_manager
+                .next_part(&minio.client, file_bytes.clone())
+                .await?;
+
+            e_tags.push(ETag { tag, part_number });
+
+            upload_manager.complete(&minio.client, e_tags).await?;
+
+            let file_stream = minio.get_object(&bucket_name, object_name).await?;
+            let downloaded_bytes = read_file_stream(file_stream).await?;
 
             if file_bytes != downloaded_bytes {
                 test_error!("Uploaded bytes and retrieved bytes do not match");
