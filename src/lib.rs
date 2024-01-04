@@ -20,7 +20,9 @@ use aws_sdk_s3::{
     types::{Bucket, Object},
     Client,
 };
-use core::upload::upload_object_presigned::upload_object_presigned;
+use core::upload::{
+    upload_object_multi::UploadManager, upload_object_presigned::upload_object_presigned,
+};
 use std::sync::Arc;
 use tokio::io::{AsyncBufRead, AsyncRead};
 
@@ -215,9 +217,15 @@ impl Minio {
         &self,
         bucket_name: &str,
         object_name: &str,
-        presigned_expiry: u64,
+        presigned_expiry_secs: u64,
     ) -> Result<PresignedRequest, Error> {
-        get_object_presigned(&self.client, bucket_name, object_name, presigned_expiry).await
+        get_object_presigned(
+            &self.client,
+            bucket_name,
+            object_name,
+            presigned_expiry_secs,
+        )
+        .await
     }
 
     /// Upload a object named `object_name` to the bucket named `bucket_name`
@@ -288,9 +296,15 @@ impl Minio {
         &self,
         bucket_name: &str,
         object_name: &str,
-        presigned_expiry: u64,
+        presigned_expiry_secs: u64,
     ) -> Result<PresignedRequest, Error> {
-        upload_object_presigned(&self.client, bucket_name, object_name, presigned_expiry).await
+        upload_object_presigned(
+            &self.client,
+            bucket_name,
+            object_name,
+            presigned_expiry_secs,
+        )
+        .await
     }
 
     /// Constructs a `PresignedUploadManager` for a presigned object upload
@@ -299,9 +313,7 @@ impl Minio {
     /// The manager can be used to obtain multiple `PresignedRequest` for parts,
     /// and can complete/abort the upload.
     ///
-    /// Note that `presigned_expiry` is applied to each individual part `PresignedRequest`.
-    ///
-    /// See `core::upload::upload_object_presigned::PresignedUploadManager` for more details.
+    /// See `core::upload::upload_object_multi::UploadManager` for more details.
     ///
     /// ---
     /// Example Usage:
@@ -309,19 +321,44 @@ impl Minio {
     ///
     /// let minio: Minio = ...;
     ///
-    /// let mut upload_manager: PresignedUploadManager = minio.upload_object_presigned(
+    /// let mut upload_manager: UploadManager = minio.upload_object_multi(
     ///     "sharks",
     ///     "shark.jpg",
-    ///     3_600,
     /// ).await?;
     /// ```
-    pub async fn upload_object_multi_presigned<'uop>(
+    pub async fn upload_object_multi<'uom>(
         &self,
-        bucket_name: &'uop str,
-        object_name: &'uop str,
-        presigned_expiry: u64,
-    ) -> Result<PresignedUploadManager<'uop>, Error> {
-        PresignedUploadManager::new(&self.client, bucket_name, object_name, presigned_expiry).await
+        bucket_name: &'uom str,
+        object_name: &'uom str,
+    ) -> Result<UploadManager<'uom>, Error> {
+        UploadManager::new(&self.client, bucket_name, object_name).await
+    }
+
+    /// Constructs a `PresignedUploadManager` for a presigned object upload
+    /// by `object_name` and `bucket_name`.
+    ///
+    /// The manager can be used to obtain multiple `PresignedRequest` for parts,
+    /// and can complete/abort the upload.
+    ///
+    /// See `core::upload::upload_object_multi_presigned::PresignedUploadManager` for more details.
+    ///
+    /// ---
+    /// Example Usage:
+    /// ```
+    ///
+    /// let minio: Minio = ...;
+    ///
+    /// let mut upload_manager: PresignedUploadManager = minio.upload_object_multi_presigned(
+    ///     "sharks",
+    ///     "shark.jpg",
+    /// ).await?;
+    /// ```
+    pub async fn upload_object_multi_presigned<'uomp>(
+        &self,
+        bucket_name: &'uomp str,
+        object_name: &'uomp str,
+    ) -> Result<PresignedUploadManager<'uomp>, Error> {
+        PresignedUploadManager::new(&self.client, bucket_name, object_name).await
     }
 
     /// Deletes a object from a bucket by `bucket_name` and `object_name`
@@ -357,8 +394,14 @@ impl Minio {
         &self,
         bucket_name: &str,
         object_name: &str,
-        presigned_expiry: u64,
+        presigned_expiry_secs: u64,
     ) -> Result<PresignedRequest, Error> {
-        delete_object_presigned(&self.client, bucket_name, object_name, presigned_expiry).await
+        delete_object_presigned(
+            &self.client,
+            bucket_name,
+            object_name,
+            presigned_expiry_secs,
+        )
+        .await
     }
 }

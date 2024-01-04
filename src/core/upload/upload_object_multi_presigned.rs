@@ -20,19 +20,18 @@ use std::sync::{
 ///     &client,
 ///     "sharks",
 ///     "shark.jpg",
-///     3_600,
 /// ).await?;
 ///
 /// let (
 ///     part_request: PresignedRequest,
 ///     part_number: usize,
-/// ) = upload_manager.next_part(&client).await?;
+/// ) = upload_manager.next_part(&client, 1_337).await?;
 ///
-/// let mut e_tags: Vec<(String, usize)> = vec![];
+/// let mut e_tags: Vec<ETag> = vec![];
 ///
 /// let e_tag: String = ...; // Obtain from client
 ///
-/// e_tags.push((e_tag, part_number));
+/// e_tags.push(ETag { tag: e_tag, part_number, });
 ///
 /// ... // Upload more parts if needed
 ///
@@ -46,7 +45,6 @@ pub struct PresignedUploadManager<'pum> {
     pub part_index: Arc<AtomicUsize>,
     pub bucket_name: &'pum str,
     pub object_name: &'pum str,
-    pub presigned_expiry: u64,
 }
 
 impl<'pum> PresignedUploadManager<'pum> {
@@ -70,7 +68,6 @@ impl<'pum> PresignedUploadManager<'pum> {
         client: &Client,
         bucket_name: &'pum str,
         object_name: &'pum str,
-        presigned_expiry: u64,
     ) -> Result<PresignedUploadManager<'pum>, Error> {
         let upload_id = start_multipart_upload(client, bucket_name, object_name).await?;
 
@@ -79,7 +76,6 @@ impl<'pum> PresignedUploadManager<'pum> {
             part_index: Arc::new(AtomicUsize::new(1)),
             bucket_name,
             object_name,
-            presigned_expiry,
         })
     }
 
@@ -94,9 +90,13 @@ impl<'pum> PresignedUploadManager<'pum> {
     /// let (
     ///     part_request: PresignedRequest,
     ///     part_number: usize,
-    /// ) = upload_manager.next_part(&client).await?;
+    /// ) = upload_manager.next_part(&client, 1_337).await?;
     /// ```
-    pub async fn next_part(&mut self, client: &Client) -> Result<(PresignedRequest, usize), Error> {
+    pub async fn next_part(
+        &mut self,
+        client: &Client,
+        presigned_expiry_secs: u64,
+    ) -> Result<(PresignedRequest, usize), Error> {
         let part_number = self.part_index.fetch_add(1, Ordering::SeqCst);
 
         Ok((
@@ -106,7 +106,7 @@ impl<'pum> PresignedUploadManager<'pum> {
                 self.object_name,
                 &self.upload_id,
                 part_number,
-                self.presigned_expiry,
+                presigned_expiry_secs,
             )
             .await?,
             part_number,
