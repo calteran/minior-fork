@@ -173,8 +173,8 @@ where
     for join_handle in join_handles {
         match join_handle.await {
             Ok((part_number, result)) => match result {
-                Ok(tag) => {
-                    e_tags.push(ETag { tag, part_number });
+                Ok(e_tag) => {
+                    e_tags.push(ETag { e_tag, part_number });
                 }
                 Err(err) => {
                     abort_multipart_upload(client, &bucket_name, &object_name, &upload_id).await?;

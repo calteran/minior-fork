@@ -118,9 +118,9 @@ pub async fn complete_multipart_upload(
 ) -> Result<(), Error> {
     let completed_parts = e_tags
         .into_iter()
-        .map(|ETag { tag, part_number }| {
+        .map(|ETag { e_tag, part_number }| {
             CompletedPart::builder()
-                .e_tag(tag)
+                .e_tag(e_tag)
                 .part_number(part_number as i32)
                 .build()
         })

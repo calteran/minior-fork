@@ -81,11 +81,11 @@ async fn test_upload_multi_get() {
 
             let mut upload_manager = minio.upload_object_multi(&bucket_name, object_name).await?;
 
-            let (tag, part_number) = upload_manager
+            let (e_tag, part_number) = upload_manager
                 .next_part(&minio.client, file_bytes.clone())
                 .await?;
 
-            e_tags.push(ETag { tag, part_number });
+            e_tags.push(ETag { e_tag, part_number });
 
             upload_manager.complete(&minio.client, e_tags).await?;
 
@@ -124,7 +124,7 @@ async fn test_upload_multi_get_presigned() {
 
             let upload_url = presigned_request.uri();
 
-            let tag = reqwest_client
+            let e_tag = reqwest_client
                 .put(upload_url)
                 .body(file_bytes.clone())
                 .send()
@@ -135,7 +135,7 @@ async fn test_upload_multi_get_presigned() {
                 .to_str()?
                 .to_string();
 
-            e_tags.push(ETag { tag, part_number });
+            e_tags.push(ETag { e_tag, part_number });
 
             upload_manager.complete(&minio.client, e_tags).await?;
 

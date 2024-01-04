@@ -28,7 +28,7 @@ use tokio::io::{AsyncBufRead, AsyncRead};
 
 /// Represents an ETag used for multi-part uploads
 pub struct ETag {
-    pub tag: String,
+    pub e_tag: String,
     pub part_number: usize,
 }
 
