@@ -195,13 +195,15 @@ impl Minio {
 
     /// Returns a stream for an object by `bucket_name` and `object_name`
     ///
+    /// Returns `Ok(None)` if the object does not exist.
+    ///
     /// ---
     /// Example Usage:
     /// ```
     ///
     /// let minio: Minio = ...;
     ///
-    /// let stream: impl AsyncBufRead = minio.get_object(
+    /// let stream: Option<impl AsyncBufRead> = minio.get_object(
     ///     "sharks",
     ///     "shark.jpg",
     /// ).await?;
@@ -210,12 +212,14 @@ impl Minio {
         &self,
         bucket_name: &str,
         object_name: &str,
-    ) -> Result<impl AsyncBufRead, Error> {
+    ) -> Result<Option<impl AsyncBufRead>, Error> {
         get_object(&self.client, bucket_name, object_name).await
     }
 
     /// Generates a `PresignedRequest` from a bucket by `bucket_name` and `object_name`
     /// to get the object.
+    ///
+    /// Returns `Ok(None)` if the object does not exist.
     ///
     /// ---
     /// Example Usage:
@@ -223,7 +227,7 @@ impl Minio {
     ///
     /// let minio: Minio = ...;
     ///
-    /// let request: PresignedRequest = minio.get_object_presigned(
+    /// let request: Option<PresignedRequest> = minio.get_object_presigned(
     ///     "sharks",
     ///     "shark.jpg",
     ///     3_600,
@@ -234,7 +238,7 @@ impl Minio {
         bucket_name: &str,
         object_name: &str,
         presigned_expiry_secs: u64,
-    ) -> Result<PresignedRequest, Error> {
+    ) -> Result<Option<PresignedRequest>, Error> {
         get_object_presigned(
             &self.client,
             bucket_name,

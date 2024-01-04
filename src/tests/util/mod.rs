@@ -75,34 +75,48 @@ pub async fn assert_object<'ao>(
             test_error!("Object {} in Bucket: {} exists", object_name, bucket_name);
         }
         ObjectAssertions::BytesEqual(bytes) => {
-            let file_stream = minio.get_object(&bucket_name, object_name).await?;
-            let downloaded_bytes = read_file_stream(file_stream).await?;
+            if let Some(file_stream) = minio.get_object(&bucket_name, object_name).await? {
+                let downloaded_bytes = read_file_stream(file_stream).await?;
 
-            if bytes != downloaded_bytes {
+                if bytes != downloaded_bytes {
+                    test_error!(
+                        "Object {} in Bucket: {} bytes do not match the provided ones",
+                        object_name,
+                        bucket_name
+                    );
+                }
+            } else {
                 test_error!(
-                    "Object {} in Bucket: {} bytes do not match the provided ones",
+                    "Object {} in Bucket: {} does not exist",
                     object_name,
                     bucket_name
                 );
             }
         }
         ObjectAssertions::BytesEqualPresigned(bytes, reqwest_client) => {
-            let presigned_request = minio
+            if let Some(presigned_request) = minio
                 .get_object_presigned(&bucket_name, object_name, 1_337)
-                .await?;
-
-            let get_url = presigned_request.uri();
-
-            let downloaded_bytes = reqwest_client
-                .get(get_url)
-                .send()
                 .await?
-                .bytes()
-                .await?
-                .to_vec();
+            {
+                let get_url = presigned_request.uri();
 
-            if bytes != downloaded_bytes {
-                test_error!("Uploaded bytes and retrieved bytes do not match");
+                let downloaded_bytes = reqwest_client
+                    .get(get_url)
+                    .send()
+                    .await?
+                    .bytes()
+                    .await?
+                    .to_vec();
+
+                if bytes != downloaded_bytes {
+                    test_error!("Uploaded bytes and retrieved bytes do not match");
+                }
+            } else {
+                test_error!(
+                    "Object {} in Bucket: {} does not exist",
+                    object_name,
+                    bucket_name
+                );
             }
         }
     }
