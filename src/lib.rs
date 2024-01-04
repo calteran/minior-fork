@@ -98,9 +98,9 @@ impl Minio {
     /// Example Usage:
     /// ```
     ///
-    /// let client: Client = ...;
+    /// let minio: Minio = ...;
     ///
-    /// let bucket_objects: Vec<Object> = list_bucket_objects(&client, "sharks").await?;
+    /// let bucket_objects: Vec<Object> = minio.list_bucket_objects("sharks").await?;
     /// ```
     pub async fn list_bucket_objects(&self, bucket_name: &str) -> Result<Vec<Object>, Error> {
         list_bucket_objects(&self.client, bucket_name).await
@@ -120,6 +120,22 @@ impl Minio {
     /// ```
     pub async fn bucket_exists(&self, bucket_name: &str) -> Result<bool, Error> {
         bucket_exists(&self.client, bucket_name).await
+    }
+
+    /// Returns true if a object by `object_name` in a bucket by `bucket_name`
+    ///
+    /// ---
+    /// Example Usage:
+    /// ```
+    ///
+    /// let minio: Minio = ...;
+    ///
+    /// if minio.object_exists("sharks", "whale_shark.png").await? {
+    ///     ...
+    /// }
+    /// ```
+    pub async fn object_exists(&self, bucket_name: &str, object_name: &str) -> Result<bool, Error> {
+        object_exists(&self.client, bucket_name, object_name).await
     }
 
     /// Returns a vector of `Bucket`s from the client
@@ -283,10 +299,9 @@ impl Minio {
     /// Example Usage:
     /// ```
     ///
-    /// let client: Client = ...;
+    /// let minio: Minio = ...;
     ///
-    /// let presigned_request: PresignedRequest = upload_presigned(
-    ///     &client,
+    /// let presigned_request: PresignedRequest = minio.upload_object_presigned(
     ///     "bucket_name",
     ///     "object_name",
     ///     1_337,

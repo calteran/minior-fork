@@ -3,15 +3,12 @@
 pub mod test_client;
 pub mod test_error;
 
-use reqwest::{
-    multipart::{Form, Part},
-    Body,
-};
+use crate::{core::bucket::object_exists, test_error, Minio};
+use test_error::TestError;
 use tokio::{
     fs::File,
     io::{AsyncBufRead, AsyncReadExt},
 };
-use tokio_util::codec::{BytesCodec, FramedRead};
 
 pub async fn get_test_file(name: &str) -> Result<File, Box<dyn std::error::Error>> {
     let file = File::open(format!("./test_data/{}", name)).await?;
@@ -25,24 +22,6 @@ pub async fn get_test_file_bytes(name: &str) -> Result<Vec<u8>, Box<dyn std::err
     let bytes = tokio::fs::read(path).await?;
 
     Ok(bytes)
-}
-
-pub async fn get_test_file_form(
-    name: &str,
-    mime: &str,
-) -> Result<(Form, u64), Box<dyn std::error::Error>> {
-    let name = name.to_owned();
-
-    let file = get_test_file(&name).await?;
-    let file_length = file.metadata().await?.len();
-    let file_stream = FramedRead::new(file, BytesCodec::new());
-
-    let body = Body::wrap_stream(file_stream);
-    let part = Part::stream(body).file_name(name).mime_str(mime)?;
-
-    let form = Form::new().part("file", part);
-
-    Ok((form, file_length))
 }
 
 pub async fn read_file_stream(
@@ -61,4 +40,72 @@ pub async fn read_file_stream(
     }
 
     Ok(downloaded_data)
+}
+
+pub enum ObjectAssertions<'oa> {
+    Exists,
+    DoesNotExist,
+    BytesEqual(Vec<u8>),
+    BytesEqualPresigned(Vec<u8>, &'oa reqwest::Client),
+}
+
+pub async fn assert_object<'ao>(
+    minio: &Minio,
+    bucket_name: &str,
+    object_name: &str,
+    assertion: ObjectAssertions<'ao>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    match assertion {
+        ObjectAssertions::Exists => {
+            if object_exists(&minio.client, bucket_name, object_name).await? {
+                return Ok(());
+            }
+
+            test_error!(
+                "Object {} in Bucket: {} does not exist",
+                object_name,
+                bucket_name
+            );
+        }
+        ObjectAssertions::DoesNotExist => {
+            if !object_exists(&minio.client, bucket_name, object_name).await? {
+                return Ok(());
+            }
+
+            test_error!("Object {} in Bucket: {} exists", object_name, bucket_name);
+        }
+        ObjectAssertions::BytesEqual(bytes) => {
+            let file_stream = minio.get_object(&bucket_name, object_name).await?;
+            let downloaded_bytes = read_file_stream(file_stream).await?;
+
+            if bytes != downloaded_bytes {
+                test_error!(
+                    "Object {} in Bucket: {} bytes do not match the provided ones",
+                    object_name,
+                    bucket_name
+                );
+            }
+        }
+        ObjectAssertions::BytesEqualPresigned(bytes, reqwest_client) => {
+            let presigned_request = minio
+                .get_object_presigned(&bucket_name, object_name, 1_337)
+                .await?;
+
+            let get_url = presigned_request.uri();
+
+            let downloaded_bytes = reqwest_client
+                .get(get_url)
+                .send()
+                .await?
+                .bytes()
+                .await?
+                .to_vec();
+
+            if bytes != downloaded_bytes {
+                test_error!("Uploaded bytes and retrieved bytes do not match");
+            }
+        }
+    }
+
+    Ok(())
 }

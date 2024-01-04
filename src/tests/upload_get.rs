@@ -1,7 +1,7 @@
 // Authors: Robert Lopez
 
-use super::util::{test_client::TestClient, test_error::TestError, *};
-use crate::{error::Error, test_error, ETag};
+use super::util::{test_client::TestClient, *};
+use crate::{error::Error, ETag};
 
 #[tokio::test]
 async fn test_upload_get() {
@@ -17,12 +17,13 @@ async fn test_upload_get() {
                 .upload_object(&bucket_name, object_name, file, None, None)
                 .await?;
 
-            let file_stream = minio.get_object(&bucket_name, object_name).await?;
-            let downloaded_bytes = read_file_stream(file_stream).await?;
-
-            if file_bytes != downloaded_bytes {
-                test_error!("Uploaded bytes and retrieved bytes do not match");
-            }
+            assert_object(
+                &minio,
+                &bucket_name,
+                object_name,
+                ObjectAssertions::BytesEqual(file_bytes),
+            )
+            .await?;
 
             Ok(())
         })
@@ -53,23 +54,13 @@ async fn test_upload_get_presigned() {
                 .send()
                 .await?;
 
-            let presigned_request = minio
-                .get_object_presigned(&bucket_name, object_name, 1_337)
-                .await?;
-
-            let get_url = presigned_request.uri();
-
-            let downloaded_bytes = reqwest_client
-                .get(get_url)
-                .send()
-                .await?
-                .bytes()
-                .await?
-                .to_vec();
-
-            if file_bytes != downloaded_bytes {
-                test_error!("Uploaded bytes and retrieved bytes do not match");
-            }
+            assert_object(
+                &minio,
+                &bucket_name,
+                object_name,
+                ObjectAssertions::BytesEqualPresigned(file_bytes, &reqwest_client),
+            )
+            .await?;
 
             Ok(())
         })
@@ -98,12 +89,13 @@ async fn test_upload_multi_get() {
 
             upload_manager.complete(&minio.client, e_tags).await?;
 
-            let file_stream = minio.get_object(&bucket_name, object_name).await?;
-            let downloaded_bytes = read_file_stream(file_stream).await?;
-
-            if file_bytes != downloaded_bytes {
-                test_error!("Uploaded bytes and retrieved bytes do not match");
-            }
+            assert_object(
+                &minio,
+                &bucket_name,
+                object_name,
+                ObjectAssertions::BytesEqual(file_bytes),
+            )
+            .await?;
 
             Ok(())
         })
@@ -147,23 +139,13 @@ async fn test_upload_multi_get_presigned() {
 
             upload_manager.complete(&minio.client, e_tags).await?;
 
-            let presigned_request = minio
-                .get_object_presigned(&bucket_name, object_name, 1_337)
-                .await?;
-
-            let get_url = presigned_request.uri();
-
-            let downloaded_bytes = reqwest_client
-                .get(get_url)
-                .send()
-                .await?
-                .bytes()
-                .await?
-                .to_vec();
-
-            if file_bytes != downloaded_bytes {
-                test_error!("Uploaded bytes and retrieved bytes do not match");
-            }
+            assert_object(
+                &minio,
+                &bucket_name,
+                object_name,
+                ObjectAssertions::BytesEqualPresigned(file_bytes, &reqwest_client),
+            )
+            .await?;
 
             Ok(())
         })

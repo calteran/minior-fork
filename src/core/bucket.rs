@@ -3,6 +3,8 @@
 use super::delete::delete_object;
 use crate::error::Error;
 use aws_sdk_s3::{
+    error::SdkError,
+    operation::{head_bucket::HeadBucketError, head_object::HeadObjectError},
     types::{Bucket, Object},
     Client,
 };
@@ -33,6 +35,27 @@ pub async fn list_buckets(client: &Client) -> Result<Vec<Bucket>, Error> {
     }
 }
 
+/// Lists `Object`s present in the given bucket by `bucket_name`
+///
+/// ---
+/// Example Usage:
+/// ```
+///
+/// let client: Client = ...;
+///
+/// let bucket_objects: Vec<Object> = list_bucket_objects(&client, "sharks").await?;
+/// ```
+pub async fn list_bucket_objects(client: &Client, bucket_name: &str) -> Result<Vec<Object>, Error> {
+    let response = client
+        .list_objects_v2()
+        .bucket(bucket_name)
+        .send()
+        .await
+        .map_err(|err| Error::sdk(err))?;
+
+    Ok(response.contents().to_owned())
+}
+
 /// Returns true if a bucket by `bucket_name` exists
 ///
 /// ---
@@ -46,15 +69,53 @@ pub async fn list_buckets(client: &Client) -> Result<Vec<Bucket>, Error> {
 /// }
 /// ```
 pub async fn bucket_exists(client: &Client, bucket_name: &str) -> Result<bool, Error> {
-    if list_buckets(client)
-        .await?
-        .iter()
-        .any(|bucket| bucket.name.as_ref().unwrap() == bucket_name)
-    {
-        return Ok(true);
-    }
+    match client.head_bucket().bucket(bucket_name).send().await {
+        Ok(_) => Ok(true),
+        Err(sdk_err) => match sdk_err {
+            SdkError::ServiceError(ref err, ..) => match err.err() {
+                HeadBucketError::NotFound(_) => Ok(false),
+                _ => Err(Error::sdk(sdk_err)),
+            },
 
-    Ok(false)
+            _ => Err(Error::sdk(sdk_err)),
+        },
+    }
+}
+
+/// Returns true if a object by `object_name` in a bucket by `bucket_name`
+///
+/// ---
+/// Example Usage:
+/// ```
+///
+/// let client: Client = ...;
+///
+/// if object_exists(&client, "sharks", "whale_shark.png").await? {
+///     ...
+/// }
+/// ```
+pub async fn object_exists(
+    client: &Client,
+    bucket_name: &str,
+    object_name: &str,
+) -> Result<bool, Error> {
+    match client
+        .head_object()
+        .bucket(bucket_name)
+        .key(object_name)
+        .send()
+        .await
+    {
+        Ok(_) => Ok(true),
+        Err(sdk_err) => match sdk_err {
+            SdkError::ServiceError(ref err, ..) => match err.err() {
+                HeadObjectError::NotFound(_) => Ok(false),
+                _ => Err(Error::sdk(sdk_err)),
+            },
+
+            _ => Err(Error::sdk(sdk_err)),
+        },
+    }
 }
 
 /// Creates a new bucket named `bucket_name`
@@ -152,25 +213,4 @@ pub async fn delete_bucket(
         .map_err(|err| Error::sdk(err))?;
 
     Ok(true)
-}
-
-/// Lists `Object`s present in the given bucket by `bucket_name`
-///
-/// ---
-/// Example Usage:
-/// ```
-///
-/// let client: Client = ...;
-///
-/// let bucket_objects: Vec<Object> = list_bucket_objects(&client, "sharks").await?;
-/// ```
-pub async fn list_bucket_objects(client: &Client, bucket_name: &str) -> Result<Vec<Object>, Error> {
-    let response = client
-        .list_objects_v2()
-        .bucket(bucket_name)
-        .send()
-        .await
-        .map_err(|err| Error::sdk(err))?;
-
-    Ok(response.contents().to_owned())
 }
