@@ -11,7 +11,7 @@ use std::sync::{
 /// Struct to manage a multipart upload manually.
 ///
 /// *Note*: `Minio::upload_object` will automatically manage a
-/// multipart upload if the file exceeds `5_242_880` bytes,
+/// multipart upload if the file exceeds `data_part_size` bytes,
 /// but this API allows a more manual approach to the process.
 ///
 /// ---
