@@ -2,6 +2,10 @@
 name = "minior"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+keywords = ["minio"]
+repository = "https://gitlab.com/robertlopezdev/minior"
+description = "Ergonomic Minio Client"
 
 [lib]
 doctest = false

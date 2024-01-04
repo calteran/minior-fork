@@ -1,5 +1,5 @@
 // Authors: Robert Lopez
-
+// License: MIT (See `LICENSE.md`)
 use crate::Minio;
 use std::{future::Future, sync::Arc};
 use uuid::Uuid;

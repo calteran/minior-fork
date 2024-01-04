@@ -1,5 +1,5 @@
 // Authors: Robert Lopez
-
+// License: MIT (See `LICENSE.md`)
 pub mod test_client;
 pub mod test_error;
 

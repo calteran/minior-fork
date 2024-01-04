@@ -1,5 +1,5 @@
 // Authors: Robert Lopez
-
+// License: MIT (See `LICENSE.md`)
 use super::util::{test_client::TestClient, *};
 use crate::test_error;
 use test_error::TestError;

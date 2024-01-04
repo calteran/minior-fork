@@ -1,5 +1,5 @@
 // Authors: Robert Lopez
-
+// License: MIT (See `LICENSE.md`)
 use super::util::*;
 use crate::{error::Error, ETag};
 use aws_sdk_s3::Client;

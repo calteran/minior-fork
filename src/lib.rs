@@ -1,4 +1,5 @@
 // Authors: Robert Lopez
+// License: MIT (See `LICENSE.md`)
 
 pub mod core;
 pub mod error;

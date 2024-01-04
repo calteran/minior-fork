@@ -1,5 +1,5 @@
 // Authors: Robert Lopez
-
+// License: MIT (See `LICENSE.md`)
 use std::fmt;
 
 /// A simple error type to mimic `panic!` via the

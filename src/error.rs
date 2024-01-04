@@ -1,5 +1,5 @@
 // Authors: Robert Lopez
-
+// License: MIT (See `LICENSE.md`)
 use std::fmt::{self, Debug};
 use tokio::task::JoinError;
 
