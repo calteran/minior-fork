@@ -327,11 +327,11 @@ impl Minio {
         .await
     }
 
-    /// Constructs a `PresignedUploadManager` for a presigned object upload
-    /// by `object_name` and `bucket_name`.
+    /// Constructs a `UploadManager` for a object upload by `object_name`
+    /// and `bucket_name`.
     ///
-    /// The manager can be used to obtain multiple `PresignedRequest` for parts,
-    /// and can complete/abort the upload.
+    /// The manager can be used to upload multiple parts,and can complete/abort
+    /// the upload.
     ///
     /// See `core::upload::upload_object_multi::UploadManager` for more details.
     ///
