@@ -52,25 +52,8 @@ where
     let bucket_name = bucket_name.to_string();
     let object_name = object_name.to_string();
 
-    let mut buffer_size = if let Some(buffer_size) = buffer_size {
-        buffer_size
-    } else {
-        100_000
-    };
-
-    if buffer_size < 4_096 {
-        buffer_size = 4_096;
-    }
-
-    let mut data_part_size = if let Some(data_part_size) = data_part_size {
-        data_part_size
-    } else {
-        5_242_880
-    };
-
-    if data_part_size < 5_242_880 {
-        data_part_size = 5_242_880;
-    }
+    let buffer_size = buffer_size.unwrap_or(100_000).max(4_096);
+    let data_part_size = data_part_size.unwrap_or(5_242_880).max(5_242_880);
 
     let mut upload_id = None;
 

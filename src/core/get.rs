@@ -44,7 +44,6 @@ pub async fn get_object(
                 GetObjectError::NoSuchKey(_) => Ok(None),
                 _ => Err(Error::sdk(sdk_err)),
             },
-
             _ => Err(Error::sdk(sdk_err)),
         },
     }
