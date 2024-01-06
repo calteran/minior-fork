@@ -1,93 +1,140 @@
 # minior
 
+Ergonomic client for Minio, built on top of the `aws_sdk_s3` crate.
 
+Table of Contents
+-----------------
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Documentation](#documentation)
+- [Usage](#usage)
+    - [Overview](#overview)
+    - [Basic example](#basic-example)
+- [Bug Reports](#bug-reports)
+- [Feature Requests](#feature-requests)
+- [Contributing](#contributing)
+- [Project Status](#project-status)
+- [License](#license)
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/robertlopezdev/minior.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.com/robertlopezdev/minior/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Requirements
+- Minio deployment:
+    - [Official installation guide](https://min.io/download?utm_term=&utm_campaign=Leads-Performance+Max-1-042023&utm_source=adwords&utm_medium=ppc&hsa_acc=8976569894&hsa_cam=20015732098&hsa_grp=&hsa_ad=&hsa_src=x&hsa_tgt=&hsa_kw=&hsa_mt=&hsa_net=adwords&hsa_ver=3&gad_source=1&gclid=Cj0KCQiAkeSsBhDUARIsAK3tiecF1RUejrAWP89hF1q-FM8_LYfmgKqKImAknRLFuXZqQ9OuD8KGv_YaAr5ZEALw_wcB#/kubernetes)
+- Rust (version 1.6+):
+    - [Official installation guide](https://www.rust-lang.org/tools/install)
 
 ## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+`cargo add minior`
+
+## Documentation
+
+This README provides a general overview, but does not go over all methods available. [Full crate documentation can be found here at docs.rs](https://docs.rs/mongor/latest/minior/)
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Overview
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+The crate exposes a struct `Minio` that can be used to interface with all `core` modules, however `core` is public so feel free to interact with those methods directly.
+
+### Basic Example
+
+```
+use minior::Minio;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Construct a client
+    let minio = Minio::new("http://127.0.0.1:9000").await;
+
+    // Create a bucket
+    minio.create_bucket("bucket_name").await?;
+
+    // Upload a object
+    let file = tokio::fs::File::open("some file path").await?;
+
+    minio.upload_object(
+        "bucket_name",
+        "object_name",
+        file,
+        None,
+        None,
+    ).await?;
+
+    // Get a Presigned URL for a get that expires in 1_337 seconds
+    let presigned_request = minio.get_object_presigned(
+        "bucket_name",
+        "object_name",
+        1_337,
+    ).await?;
+
+    // Delete a object
+    minio.delete_object(
+        "bucket_name",
+        "object_name",
+    ).await?;
+
+    // Delete a bucket
+    minio.delete_bucket(
+        "bucket_name",
+        true,
+    ).await?;
+
+    Ok(())
+}
+```
+
+## Bug Reports
+
+Please report bugs by creating an `issue`, or if there is a sufficient fix you are aware of, feel free to open a PR, but please follow the `Contributing` guidelines below.
+
+To report a bug, it must be directly related to this crate, and you must provide as much information as possible, such as:
+
+- Code examples
+
+- Error messages
+
+- Steps to reproduce 
+
+- System information (If applicable)
+
+## Feature requests
+
+If you feel there is something missing, or some variation of the current crate that would require additional dependencies other than `aws-sdk-s3`, `aws-config` or `tokio`; please create an `issue` with the request and discuss why you feel it should be part of this crate and not a third party crate.
 
 ## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+I welcome anyone to contribute to the crate. But I do have some general requirements:
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+- Any additional or modified methods require unit testing with 100% test coverage, that should be placed in the `tests` module.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+- Any change that adds in additional dependencies should be created as a separate feature.
+
+- All current unit tests must pass, I.E. run `cargo test` and all should pass.
+
+- Add your name and or handle to `CONTRIBUTORS.md` if not already present, as well as to the `Authors` section on the header comment for the file.
+
+- If adding in a new dependency, please update `License::Third Party` in this README to correspond with their licensing.
+
+If your change meets these guidelines, feel free to open a PR.
+
+## Project Status
+
+I plan to maintain this crate for the forseeable future.
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+MIT
+
+See `LICENSE.md` for more information
+
+### Third Party
+
+This crate is built on-top of:
+
+- The [`aws-config` and `aws-sdk-s3`](https://github.com/mongodb/mongo-rust-driver/tree/main) crates, which is licensed under Apache License 2.0, [view it here](https://github.com/smithy-lang/smithy-rs/blob/main/LICENSE).
+
+- The [`tokio`](https://github.com/tokio-rs/tokio) crate, which is licensed under MIT, [view it here](https://github.com/tokio-rs/tokio/blob/master/LICENSE).
+
+- The [`uuid`](https://github.com/uuid-rs/uuid) crate (Used in internal testing), which is licensed under MIT, [view it here](https://github.com/uuid-rs/uuid/blob/main/LICENSE-MIT) or Apache 2.0, [view it here](https://github.com/uuid-rs/uuid/blob/main/LICENSE-APACHE).
+
+- The [`reqwest`](https://github.com/seanmonstar/reqwest) crate (Used in internal testing), which is licensed under MIT, [view it here](https://github.com/seanmonstar/reqwest/blob/master/LICENSE-MIT) or Apache 2.0, [view it here](https://github.com/seanmonstar/reqwest/blob/master/LICENSE-APACHE).
+

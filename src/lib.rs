@@ -44,7 +44,7 @@ pub struct ETag {
 ///
 /// let bucket_name = "shark_images";
 ///
-/// let minio = Minio::new(url).await?;
+/// let minio = Minio::new(url).await;
 ///
 /// minio.create_bucket(bucket_name).await?;
 ///
@@ -82,7 +82,7 @@ impl Minio {
     /// // Note: Provide the S3 API Port
     /// let url = "http://127.0.0.1:9000";
     ///
-    /// let minio = Minio::new(url).await?;
+    /// let minio = Minio::new(url).await;
     /// ```
     pub async fn new(url: &str) -> Self {
         let config = aws_config::from_env().endpoint_url(url).load().await;
