@@ -27,7 +27,7 @@ Table of Contents
 
 ## Documentation
 
-This README provides a general overview, but does not go over all methods available. [Full crate documentation can be found here at docs.rs](https://docs.rs/mongor/latest/minior/)
+This README provides a general overview, but does not go over all methods available. [Full crate documentation can be found here at docs.rs](https://docs.rs/minior/latest/minior/)
 
 ## Usage
 
