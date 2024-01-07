@@ -46,14 +46,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let minio = Minio::new("http://127.0.0.1:9000").await;
 
     // Create a bucket
-    minio.create_bucket("bucket_name").await?;
+    minio.create_bucket("sharks").await?;
 
     // Upload a object
     let file = tokio::fs::File::open("some file path").await?;
 
     minio.upload_object(
-        "bucket_name",
-        "object_name",
+        "sharks",
+        "shark",
         file,
         None,
         None,
@@ -61,20 +61,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Get a Presigned URL for a get that expires in 1_337 seconds
     let presigned_request = minio.get_object_presigned(
-        "bucket_name",
-        "object_name",
+        "sharks",
+        "shark",
         1_337,
     ).await?;
 
     // Delete a object
     minio.delete_object(
-        "bucket_name",
-        "object_name",
+        "sharks",
+        "shark",
     ).await?;
 
     // Delete a bucket
     minio.delete_bucket(
-        "bucket_name",
+        "sharks",
         true,
     ).await?;
 
