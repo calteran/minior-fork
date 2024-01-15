@@ -1,12 +1,9 @@
 // Authors: Robert Lopez
 // License: MIT (See `LICENSE.md`)
+
 use super::util::*;
 use crate::{error::Error, ETag};
 use aws_sdk_s3::{presigning::PresignedRequest, Client};
-use std::sync::{
-    atomic::{AtomicUsize, Ordering},
-    Arc,
-};
 
 /// Struct to manage a presigned multipart upload
 ///
@@ -42,7 +39,7 @@ use std::sync::{
 /// ```
 pub struct PresignedUploadManager<'pum> {
     pub upload_id: String,
-    pub part_index: Arc<AtomicUsize>,
+    pub part_index: usize,
     pub bucket_name: &'pum str,
     pub object_name: &'pum str,
 }
@@ -73,7 +70,7 @@ impl<'pum> PresignedUploadManager<'pum> {
 
         Ok(PresignedUploadManager {
             upload_id,
-            part_index: Arc::new(AtomicUsize::new(1)),
+            part_index: 0,
             bucket_name,
             object_name,
         })
@@ -97,7 +94,8 @@ impl<'pum> PresignedUploadManager<'pum> {
         client: &Client,
         presigned_expiry_secs: u64,
     ) -> Result<(PresignedRequest, usize), Error> {
-        let part_number = self.part_index.fetch_add(1, Ordering::SeqCst);
+        let part_number = self.part_index + 1;
+        self.part_index += 1;
 
         Ok((
             upload_part_presigned(

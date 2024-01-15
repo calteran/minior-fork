@@ -1,7 +1,7 @@
 // Authors: Robert Lopez
 // License: MIT (See `LICENSE.md`)
 use super::util::{test_client::TestClient, *};
-use crate::{error::Error, ETag};
+use crate::{error::Error, test_error, ETag};
 
 #[tokio::test]
 async fn test_upload_get() {
@@ -13,9 +13,13 @@ async fn test_upload_get() {
             let file = get_test_file(object_name).await?;
             let file_bytes = get_test_file_bytes(object_name).await?;
 
-            minio
+            let uploaded_bytes = minio
                 .upload_object(&bucket_name, object_name, file, None, None)
                 .await?;
+
+            if file_bytes.len() != uploaded_bytes {
+                test_error!("upload_object bytes counter did not equal the files size");
+            }
 
             assert_object(
                 &minio,
@@ -87,7 +91,11 @@ async fn test_upload_multi_get() {
 
             e_tags.push(ETag { e_tag, part_number });
 
-            upload_manager.complete(&minio.client, e_tags).await?;
+            let uploaded_bytes = upload_manager.complete(&minio.client, e_tags).await?;
+
+            if file_bytes.len() != uploaded_bytes {
+                test_error!("upload_object bytes counter did not equal the files size");
+            }
 
             assert_object(
                 &minio,

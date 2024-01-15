@@ -22,6 +22,8 @@ use tokio::io::{AsyncRead, AsyncReadExt};
 /// Will automatically convert to a multipart upload if over `data_part_size`
 /// bytes
 ///
+/// Returns the total amount of bytes uploaded
+///
 /// ---
 /// Example Usage:
 /// ```

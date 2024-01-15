@@ -260,6 +260,8 @@ impl Minio {
     /// Will automatically convert to a multipart upload if over `data_part_size`
     /// bytes
     ///
+    /// Returns the total amount of bytes uploaded
+    ///
     /// ---
     /// Example Usage:
     /// ```
@@ -267,7 +269,7 @@ impl Minio {
     /// let minio: Minio = ...;
     /// let shark_image: tokio::fs::File = ...;
     ///
-    /// minio.upload_object(
+    /// let bytes_uploaded: usize = minio.upload_object(
     ///     "sharks",
     ///     "shark.jpg",
     ///     shark_image,
@@ -283,7 +285,7 @@ impl Minio {
         stream: S,
         buffer_size: Option<usize>,
         data_part_size: Option<usize>,
-    ) -> Result<(), Error>
+    ) -> Result<usize, Error>
     where
         S: AsyncRead + Unpin,
     {

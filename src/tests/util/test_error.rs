@@ -1,5 +1,6 @@
 // Authors: Robert Lopez
 // License: MIT (See `LICENSE.md`)
+
 use std::fmt;
 
 /// A simple error type to mimic `panic!` via the
@@ -61,7 +62,7 @@ impl TestError {
 #[macro_export]
 macro_rules! test_error {
     ($fmt:expr $(, $arg:expr)*) => {
-        Err(TestError(format!($fmt $(, $arg)*)))?
+        Err(crate::tests::util::test_error::TestError(format!($fmt $(, $arg)*)))?
     };
 }
 

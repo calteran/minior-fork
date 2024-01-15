@@ -1,12 +1,9 @@
 // Authors: Robert Lopez
 // License: MIT (See `LICENSE.md`)
+
 use super::util::*;
 use crate::{error::Error, ETag};
 use aws_sdk_s3::Client;
-use std::sync::{
-    atomic::{AtomicUsize, Ordering},
-    Arc,
-};
 
 /// Struct to manage a multipart upload manually.
 ///
@@ -39,16 +36,17 @@ use std::sync::{
 ///
 /// ... // Upload more parts if needed
 ///
-/// upload_manager.complete(
+/// let bytes_uploaded: usize = upload_manager.complete(
 ///     &client,
 ///     e_tags,
 /// ).await?;
 /// ```
 pub struct UploadManager<'um> {
     pub upload_id: String,
-    pub part_index: Arc<AtomicUsize>,
+    pub part_index: usize,
     pub bucket_name: &'um str,
     pub object_name: &'um str,
+    pub bytes_uploaded: usize,
 }
 
 impl<'um> UploadManager<'um> {
@@ -77,9 +75,10 @@ impl<'um> UploadManager<'um> {
 
         Ok(UploadManager {
             upload_id,
-            part_index: Arc::new(AtomicUsize::new(1)),
+            part_index: 0,
             bucket_name,
             object_name,
+            bytes_uploaded: 0,
         })
     }
 
@@ -103,7 +102,9 @@ impl<'um> UploadManager<'um> {
         client: &Client,
         bytes: Vec<u8>,
     ) -> Result<(String, usize), Error> {
-        let part_number = self.part_index.fetch_add(1, Ordering::SeqCst);
+        let part_number = self.part_index + 1;
+        self.part_index += 1;
+        self.bytes_uploaded += bytes.len();
 
         Ok((
             upload_part(
@@ -148,9 +149,9 @@ impl<'um> UploadManager<'um> {
     ///
     /// let e_tags: Vec<ETag> = ...;
     ///
-    /// upload_manager.complete(&client, e_tags).await?;
+    /// let bytes_uploaded: usize = upload_manager.complete(&client, e_tags).await?;
     /// ```
-    pub async fn complete(&self, client: &Client, e_tags: Vec<ETag>) -> Result<(), Error> {
+    pub async fn complete(&self, client: &Client, e_tags: Vec<ETag>) -> Result<usize, Error> {
         complete_multipart_upload(
             client,
             e_tags,
@@ -158,6 +159,8 @@ impl<'um> UploadManager<'um> {
             self.object_name,
             &self.upload_id,
         )
-        .await
+        .await?;
+
+        Ok(self.bytes_uploaded)
     }
 }
