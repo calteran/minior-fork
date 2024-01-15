@@ -1,5 +1,6 @@
 // Authors: Robert Lopez
 // License: MIT (See `LICENSE.md`)
+
 use super::util::*;
 use crate::{error::Error, ETag};
 use aws_sdk_s3::Client;
@@ -28,7 +29,7 @@ use tokio::io::{AsyncRead, AsyncReadExt};
 /// let client: Client = ...;
 /// let shark_image: tokio::fs::File = ...;
 ///
-/// upload_object(
+/// let bytes_uploaded: usize = upload_object(
 ///     &client,
 ///     "sharks",
 ///     "shark.jpg",
@@ -45,7 +46,7 @@ pub async fn upload_object<S>(
     mut stream: S,
     buffer_size: Option<usize>,
     data_part_size: Option<usize>,
-) -> Result<(), Error>
+) -> Result<usize, Error>
 where
     S: AsyncRead + Unpin,
 {
@@ -63,6 +64,7 @@ where
     let mut data_part_buffer = vec![];
     let counter = Arc::new(AtomicUsize::from(1));
 
+    let mut total_bytes = 0;
     let mut started_multipart = false;
 
     loop {
@@ -71,11 +73,13 @@ where
             .await
             .map_err(|err| Error::StdIo(err))?;
 
+        total_bytes += bytes_read;
+
         if bytes_read == 0 {
             if join_handles.is_empty() && data_part_buffer.len() < data_part_size {
                 upload(client, &bucket_name, &object_name, data_part_buffer).await?;
 
-                return Ok(());
+                return Ok(total_bytes);
             }
 
             break;
@@ -129,6 +133,8 @@ where
     let mut bytes = vec![];
     std::mem::swap(&mut data_part_buffer, &mut bytes);
 
+    total_bytes += bytes.len();
+
     let client_clone = client.clone();
     let counter_clone = counter.clone();
     let upload_id_clone = upload_id.clone();
@@ -176,5 +182,5 @@ where
 
     complete_multipart_upload(client, e_tags, &bucket_name, &object_name, &upload_id).await?;
 
-    Ok(())
+    Ok(total_bytes)
 }
