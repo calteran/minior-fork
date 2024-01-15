@@ -1,6 +1,6 @@
 [package]
 name = "minior"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 license = "MIT"
 keywords = ["minio"]
@@ -13,11 +13,11 @@ doctest = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-aws-config = { version = "1.0.3", features = ["behavior-version-latest"] }
-aws-sdk-s3 = "1.5.0"
-tokio = { version = "1.35.0", features = [] }
+aws-config = { version = "1.1.2", features = ["behavior-version-latest"] }
+aws-sdk-s3 = "1.12.0"
+tokio = { version = "1.35.1", features = [] }
 
 [dev-dependencies]
 reqwest = { version = "0.11.23", features = ["stream"] }
 uuid = { version = "1.6.1", features = ["v4"] }
-tokio = { version = "1.35.0", features = ["full"] }
+tokio = { version = "1.35.1", features = ["full"] }
