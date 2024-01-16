@@ -130,7 +130,7 @@ See `LICENSE.md` for more information
 
 This crate is built on-top of:
 
-- The [`aws-config` and `aws-sdk-s3`](https://github.com/mongodb/mongo-rust-driver/tree/main) crates, which is licensed under Apache License 2.0, [view it here](https://github.com/smithy-lang/smithy-rs/blob/main/LICENSE).
+- The [`aws-config`](https://crates.io/crates/aws-config) and [`aws-sdk-s3`](https://crates.io/crates/aws-sdk-s3) crates, which is licensed under Apache License 2.0, [view it here](https://github.com/smithy-lang/smithy-rs/blob/main/LICENSE).
 
 - The [`tokio`](https://github.com/tokio-rs/tokio) crate, which is licensed under MIT, [view it here](https://github.com/tokio-rs/tokio/blob/master/LICENSE).
 
