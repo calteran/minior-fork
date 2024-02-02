@@ -10,6 +10,7 @@ Table of Contents
 - [Usage](#usage)
     - [Overview](#overview)
     - [Basic example](#basic-example)
+- [Features](#features)
 - [Bug Reports](#bug-reports)
 - [Feature Requests](#feature-requests)
 - [Contributing](#contributing)
@@ -82,6 +83,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## Features
+
+- `pagination_iter`: gives access to `ObjectPaginationIter`
+to asynchronously paginate through objects for a bucket via `core::pagination_iter` or `Minio::pagination_object_iter`.
+
 ## Bug Reports
 
 Please report bugs by creating an `issue`, or if there is a sufficient fix you are aware of, feel free to open a PR, but please follow the `Contributing` guidelines below.
@@ -130,7 +136,7 @@ See `LICENSE.md` for more information
 
 This crate is built on-top of:
 
-- The [`aws-config`](https://crates.io/crates/aws-config) and [`aws-sdk-s3`](https://crates.io/crates/aws-sdk-s3) crates, which is licensed under Apache License 2.0, [view it here](https://github.com/smithy-lang/smithy-rs/blob/main/LICENSE).
+- The [`aws-config`](https://crates.io/crates/aws-config) and [`aws-sdk-s3`](https://crates.io/crates/aws-sdk-s3) and [`aws-smithy-async`](https://crates.io/crates/aws-smithy-async) crates, which is licensed under Apache License 2.0, [view it here](https://github.com/smithy-lang/smithy-rs/blob/main/LICENSE).
 
 - The [`tokio`](https://github.com/tokio-rs/tokio) crate, which is licensed under MIT, [view it here](https://github.com/tokio-rs/tokio/blob/master/LICENSE).
 

@@ -27,6 +27,9 @@ use core::upload::{
 use std::sync::Arc;
 use tokio::io::{AsyncBufRead, AsyncRead};
 
+#[cfg(feature = "pagination_iter")]
+use core::pagination_iter::ObjectPaginationIter;
+
 /// Represents an ETag used for multi-part uploads
 pub struct ETag {
     pub e_tag: String,
@@ -425,5 +428,30 @@ impl Minio {
             presigned_expiry_secs,
         )
         .await
+    }
+
+    #[cfg(feature = "pagination_iter")]
+    /// Generates a `ObjectPaginationIter` to asynchronously
+    /// iterate through pages of `Object`s for a `Bucket`.
+    ///
+    /// ---
+    /// Example Usage:
+    /// ```
+    ///
+    /// let minio: Minio = ...;
+    ///
+    /// // `12` means we want 12 objects per page
+    /// let mut objects_iter = minio.pagination_object_iter("bucket_name", 12);
+    ///
+    /// while let Some(objects) = objects_iter.next().await? {
+    ///     ...
+    /// }
+    /// ```
+    pub fn pagination_object_iter(
+        &self,
+        bucket_name: &str,
+        page_size: i32,
+    ) -> ObjectPaginationIter {
+        ObjectPaginationIter::new(&self.client, bucket_name, page_size)
     }
 }
