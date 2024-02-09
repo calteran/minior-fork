@@ -108,8 +108,6 @@ impl Default for UploadObjectAdditionalOptions {
 ///
 /// Returns the total amount of bytes uploaded
 ///
-/// On multi-part upload, spawns tasks with a permit limit of 4,
-///
 /// ---
 /// Example Usage:
 /// ```

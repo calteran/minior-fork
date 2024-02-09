@@ -253,13 +253,17 @@ impl Minio {
         .await
     }
 
-    /// Upload a object named `object_name` to the bucket named `bucket_name`
+    /// Upload a object named `object_name` to the bucket named `bucket_name` via
+    /// a stream `S`
     ///
-    /// Default `buffer_size` is `100_000`, and cannot be
-    /// lower than `4_096`
+    /// Default `buffer_size` is `100_000`, and cannot be lower than `4_096`
+    /// *(Overwrites to `4_096` if lower)*
     ///
-    /// Default `data_part_size` is `5_242_880`, and cannot
-    /// be lower than that value
+    /// Default `data_part_size` is `5_242_880`, and cannot be lower than `5_242_880`
+    /// *(Overwrites to `5_242_880` if lower)*
+    ///
+    /// Default `semaphore_permits` is `4`, and cannot be lower than `1`
+    /// *(Overwrites to `1` if lower)*
     ///
     /// Will automatically convert to a multipart upload if over `data_part_size`
     /// bytes
