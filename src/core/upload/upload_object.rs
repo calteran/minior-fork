@@ -123,7 +123,6 @@ impl Default for UploadObjectAdditionalOptions {
 ///     "shark.jpg",
 ///     shark_image,
 ///     None,
-///     None,
 ///   )
 ///   .await?;
 /// ```
@@ -182,11 +181,9 @@ where
         buffer = vec![0; buffer_size];
 
         if data_part_buffer.len() >= data_part_size {
-            if !started_multipart {
+            if upload_id.is_none() {
                 upload_id =
                     Some(start_multipart_upload(&client, &bucket_name, &object_name).await?);
-
-                started_multipart = true;
             }
 
             if let Some(ref upload_id) = upload_id {
@@ -211,11 +208,10 @@ where
         }
     }
 
-    let upload_id = upload_id.unwrap();
+    let upload_id = upload_id.ok_or(Error::internal("upload_id was None on multipart upload"))?;
 
     let mut bytes = vec![];
     std::mem::swap(&mut data_part_buffer, &mut bytes);
-
     total_bytes += bytes.len();
 
     let join_handle = spawn_upload_future(SpawnUploadFutureOptions {
