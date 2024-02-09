@@ -4,6 +4,8 @@
 pub mod core;
 pub mod error;
 
+pub use aws_sdk_s3;
+
 #[cfg(test)]
 mod tests;
 
