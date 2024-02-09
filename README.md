@@ -57,7 +57,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "shark",
         file,
         None,
-        None,
     ).await?;
 
     // Get a Presigned URL for a get that expires in 1_337 seconds

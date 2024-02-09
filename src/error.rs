@@ -1,7 +1,7 @@
 // Authors: Robert Lopez
 // License: MIT (See `LICENSE.md`)
 use std::fmt::{self, Debug};
-use tokio::task::JoinError;
+use tokio::{sync::AcquireError, task::JoinError};
 
 /// Error enum to wrap various errors that can occur inside the crate.
 ///
@@ -12,6 +12,7 @@ pub enum Error {
     SdkError(String),
     Internal(String),
     JoinError(JoinError),
+    AcquireError(AcquireError),
 }
 
 impl fmt::Display for Error {

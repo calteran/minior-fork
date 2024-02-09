@@ -12,7 +12,7 @@ async fn test_delete() {
             let file = get_test_file(object_name).await?;
 
             minio
-                .upload_object(&bucket_name, object_name, file, None, None)
+                .upload_object(&bucket_name, object_name, file, None)
                 .await?;
 
             minio.delete_object(&bucket_name, object_name).await?;
@@ -42,7 +42,7 @@ async fn test_delete_presigned() {
             let reqwest_client = reqwest::Client::new();
 
             minio
-                .upload_object(&bucket_name, object_name, file, None, None)
+                .upload_object(&bucket_name, object_name, file, None)
                 .await?;
 
             let request = minio

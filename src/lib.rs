@@ -59,7 +59,6 @@ pub struct ETag {
 ///       object_name,
 ///       shark_image,
 ///       None,
-///       None,
 ///   )
 ///   .await?;
 ///
@@ -276,8 +275,7 @@ impl Minio {
     ///     "sharks",
     ///     "shark.jpg",
     ///     shark_image,
-    ///     None,
-    ///     None,
+    ///     UploadObjectAdditionalOptions::default(),
     ///   )
     ///   .await?;
     /// ```
@@ -286,19 +284,17 @@ impl Minio {
         bucket_name: &str,
         object_name: &str,
         stream: S,
-        buffer_size: Option<usize>,
-        data_part_size: Option<usize>,
+        additional_options: Option<UploadObjectAdditionalOptions>,
     ) -> Result<usize, Error>
     where
         S: AsyncRead + Unpin,
     {
         upload_object(
-            &self.client,
+            self.client.clone(),
             bucket_name,
             object_name,
             stream,
-            buffer_size,
-            data_part_size,
+            additional_options.unwrap_or_default(),
         )
         .await
     }

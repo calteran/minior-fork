@@ -30,7 +30,7 @@ async fn test_object_exists() {
             let file = get_test_file(object_name).await?;
 
             minio
-                .upload_object(&bucket_name, object_name, file, None, None)
+                .upload_object(&bucket_name, object_name, file, None)
                 .await?;
 
             if !minio.object_exists(&bucket_name, object_name).await? {
@@ -57,7 +57,7 @@ async fn test_list_objects() {
             let file = get_test_file(object_name).await?;
 
             minio
-                .upload_object(&bucket_name, object_name, file, None, None)
+                .upload_object(&bucket_name, object_name, file, None)
                 .await?;
 
             let objects = minio.list_bucket_objects(&bucket_name).await?;

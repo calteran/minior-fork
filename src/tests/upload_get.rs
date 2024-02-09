@@ -14,7 +14,7 @@ async fn test_upload_get() {
             let file_bytes = get_test_file_bytes(object_name).await?;
 
             let uploaded_bytes = minio
-                .upload_object(&bucket_name, object_name, file, None, None)
+                .upload_object(&bucket_name, object_name, file, None)
                 .await?;
 
             if file_bytes.len() != uploaded_bytes {

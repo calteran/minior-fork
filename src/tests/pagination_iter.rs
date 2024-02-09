@@ -19,7 +19,7 @@ mod tests {
                     let file = get_test_file(object_name).await?;
 
                     minio
-                        .upload_object(&bucket_name, object_name, file, None, None)
+                        .upload_object(&bucket_name, object_name, file, None)
                         .await?;
                 }
 
