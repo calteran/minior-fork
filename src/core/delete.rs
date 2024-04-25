@@ -32,7 +32,7 @@ pub async fn delete_object(
         .key(object_name)
         .send()
         .await
-        .map_err(|err| Error::sdk(err))?;
+        .map_err(Error::sdk)?;
 
     Ok(())
 }
@@ -62,13 +62,13 @@ pub async fn delete_object_presigned(
     let presigning_config = PresigningConfig::builder()
         .expires_in(Duration::from_secs(presigned_expiry_secs))
         .build()
-        .map_err(|err| Error::sdk(err))?;
+        .map_err(Error::sdk)?;
 
-    Ok(client
+    client
         .delete_object()
         .bucket(bucket_name)
         .key(object_name)
         .presigned(presigning_config)
         .await
-        .map_err(|err| Error::sdk(err))?)
+        .map_err(Error::sdk)
 }

@@ -22,7 +22,7 @@ pub async fn upload(
         .body(ByteStream::from(bytes))
         .send()
         .await
-        .map_err(|err| Error::sdk(err))?;
+        .map_err(Error::sdk)?;
 
     Ok(())
 }
@@ -38,7 +38,7 @@ pub async fn start_multipart_upload(
         .key(object_name)
         .send()
         .await
-        .map_err(|err| Error::sdk(err))?
+        .map_err(Error::sdk)?
         .upload_id
         .ok_or(Error::internal(
             "upload_id was None for a valid multipart call",
@@ -58,7 +58,7 @@ pub async fn abort_multipart_upload(
         .upload_id(upload_id)
         .send()
         .await
-        .map_err(|err| Error::sdk(err))?;
+        .map_err(Error::sdk)?;
 
     Ok(())
 }
@@ -80,7 +80,7 @@ pub async fn upload_part(
         .body(ByteStream::from(bytes))
         .send()
         .await
-        .map_err(|err| Error::sdk(err))?
+        .map_err(Error::sdk)?
         .e_tag
         .ok_or(Error::internal("e_tag was None on upload_part"))
 }
@@ -96,9 +96,9 @@ pub async fn upload_part_presigned(
     let presigning_config = PresigningConfig::builder()
         .expires_in(Duration::from_secs(presigned_expiry_secs))
         .build()
-        .map_err(|err| Error::sdk(err))?;
+        .map_err(Error::sdk)?;
 
-    Ok(client
+    client
         .upload_part()
         .bucket(bucket_name)
         .key(object_name)
@@ -106,7 +106,7 @@ pub async fn upload_part_presigned(
         .part_number(part_number as i32)
         .presigned(presigning_config)
         .await
-        .map_err(|err| Error::sdk(err))?)
+        .map_err(Error::sdk)
 }
 
 pub async fn complete_multipart_upload(
@@ -138,7 +138,7 @@ pub async fn complete_multipart_upload(
         .upload_id(upload_id)
         .send()
         .await
-        .map_err(|err| Error::sdk(err))?;
+        .map_err(Error::sdk)?;
 
     Ok(())
 }

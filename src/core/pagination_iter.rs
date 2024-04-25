@@ -67,12 +67,7 @@ impl ObjectPaginationIter {
     /// }
     /// ```
     pub async fn next(&mut self) -> Result<Option<Vec<Object>>, Error> {
-        if let Some(page) = self
-            .page_stream
-            .try_next()
-            .await
-            .map_err(|err| Error::sdk(err))?
-        {
+        if let Some(page) = self.page_stream.try_next().await.map_err(Error::sdk)? {
             let objects = page.contents().to_owned();
 
             return Ok(Some(objects));

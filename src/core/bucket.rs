@@ -26,7 +26,7 @@ pub async fn list_buckets(client: &Client) -> Result<Vec<Bucket>, Error> {
         .list_buckets()
         .send()
         .await
-        .map_err(|err| Error::sdk(err))?
+        .map_err(Error::sdk)?
         .buckets
     {
         Ok(buckets)
@@ -51,7 +51,7 @@ pub async fn list_bucket_objects(client: &Client, bucket_name: &str) -> Result<V
         .bucket(bucket_name)
         .send()
         .await
-        .map_err(|err| Error::sdk(err))?;
+        .map_err(Error::sdk)?;
 
     Ok(response.contents().to_owned())
 }
@@ -140,7 +140,7 @@ pub async fn create_bucket(client: &Client, bucket_name: &str) -> Result<bool, E
         .bucket(bucket_name)
         .send()
         .await
-        .map_err(|err| Error::sdk(err))?;
+        .map_err(Error::sdk)?;
 
     Ok(true)
 }
@@ -210,7 +210,7 @@ pub async fn delete_bucket(
         .bucket(bucket_name)
         .send()
         .await
-        .map_err(|err| Error::sdk(err))?;
+        .map_err(Error::sdk)?;
 
     Ok(true)
 }

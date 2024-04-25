@@ -76,7 +76,7 @@ pub async fn get_object_presigned(
     let presigning_config = PresigningConfig::builder()
         .expires_in(Duration::from_secs(presigned_expiry_secs))
         .build()
-        .map_err(|err| Error::sdk(err))?;
+        .map_err(Error::sdk)?;
 
     match client
         .get_object()

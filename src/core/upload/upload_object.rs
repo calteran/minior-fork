@@ -155,7 +155,6 @@ where
     let counter = Arc::new(AtomicUsize::from(1));
 
     let mut total_bytes = 0;
-    let mut started_multipart = false;
 
     loop {
         let bytes_read = stream
