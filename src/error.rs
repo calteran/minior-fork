@@ -1,18 +1,15 @@
 // Authors: Robert Lopez
 // License: MIT (See `LICENSE.md`)
 use std::fmt::{self, Debug};
-use tokio::{sync::AcquireError, task::JoinError};
 
 /// Error enum to wrap various errors that can occur inside the crate.
-///
-/// `Error::SdkError` is a formatted `"{:?}"` version of the `SdkError`
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Error {
-    StdIo(std::io::Error),
+    StdIo(std::io::ErrorKind),
     SdkError(String),
     Internal(String),
-    JoinError(JoinError),
-    AcquireError(AcquireError),
+    JoinError(String),
+    AcquireError(String),
 }
 
 impl fmt::Display for Error {

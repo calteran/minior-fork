@@ -48,7 +48,7 @@ async fn spawn_upload_future(
         .clone()
         .acquire_owned()
         .await
-        .map_err(|err| Error::AcquireError(err))?;
+        .map_err(|_| Error::AcquireError("AcquireError".to_string()))?;
 
     Ok(tokio::spawn(async move {
         let part_number = counter_clone.fetch_add(1, Ordering::SeqCst);
@@ -160,7 +160,7 @@ where
         let bytes_read = stream
             .read(&mut buffer[..])
             .await
-            .map_err(|err| Error::StdIo(err))?;
+            .map_err(|err| Error::StdIo(err.kind()))?;
 
         total_bytes += bytes_read;
 
@@ -240,10 +240,10 @@ where
                     return Err(err);
                 }
             },
-            Err(err) => {
+            Err(_) => {
                 abort_multipart_upload(&client, &bucket_name, &object_name, &upload_id).await?;
 
-                return Err(Error::JoinError(err));
+                return Err(Error::JoinError("JoinError".to_string()));
             }
         }
     }
