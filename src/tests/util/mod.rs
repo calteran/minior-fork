@@ -4,7 +4,6 @@ pub mod test_client;
 pub mod test_error;
 
 use crate::{core::bucket::object_exists, test_error, Minio};
-use test_error::TestError;
 use tokio::{
     fs::File,
     io::{AsyncBufRead, AsyncReadExt},

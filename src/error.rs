@@ -8,13 +8,19 @@ pub enum Error {
     StdIo(std::io::ErrorKind),
     SdkError(String),
     Internal(String),
-    JoinError(String),
-    AcquireError(String),
+    JoinError,
+    AcquireError,
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)
+        match self {
+            Error::StdIo(err) => write!(f, "{:?}", err),
+            Error::SdkError(err) => write!(f, "{err}"),
+            Error::Internal(err) => write!(f, "{err}"),
+            Error::JoinError => write!(f, "JoinError"),
+            Error::AcquireError => write!(f, "AcquireError"),
+        }
     }
 }
 

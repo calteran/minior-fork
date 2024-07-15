@@ -30,12 +30,6 @@ use std::fmt;
 #[derive(Debug)]
 pub struct TestError(pub String);
 
-impl TestError {
-    pub fn from(message: &str) -> Self {
-        Self(message.to_string())
-    }
-}
-
 /// Macro to mimic `panic!` when using `TestClient::run_test`.
 ///
 /// ---

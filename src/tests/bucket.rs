@@ -2,7 +2,6 @@
 // License: MIT (See `LICENSE.md`)
 use super::util::{test_client::TestClient, *};
 use crate::test_error;
-use test_error::TestError;
 
 #[tokio::test]
 async fn test_bucket_exists() {
@@ -49,32 +48,32 @@ async fn test_object_exists() {
 
 #[tokio::test]
 async fn test_list_objects() {
-    let object_name: &str = "shark.png";
+    let object_names = vec!["shark.png", "file1.txt", "owl.jpg"];
     let test_client = TestClient::new().await;
 
     test_client
         .run_test(|minio, bucket_name| async move {
-            let file = get_test_file(object_name).await?;
+            for object_name in object_names.iter() {
+                let file = get_test_file(object_name).await?;
 
-            minio
-                .upload_object(&bucket_name, object_name, file, None)
-                .await?;
+                minio
+                    .upload_object(&bucket_name, object_name, file, None)
+                    .await?;
+            }
 
             let objects = minio.list_bucket_objects(&bucket_name).await?;
 
-            if objects.len() == 1 {
-                if let Some(name) = objects[0].key() {
-                    if name == object_name {
-                        return Ok(());
+            for object in objects {
+                if let Some(key) = object.key() {
+                    if !object_names.contains(&key) {
+                        test_error!("List objects did not list {key}");
                     }
-                }
-            }
 
-            test_error!(
-                "Object {} in Bucket {} did not exist in list buckets",
-                object_name,
-                bucket_name
-            );
+                    continue;
+                }
+
+                test_error!(" {:?} had no key!", object);
+            }
 
             Ok(())
         })

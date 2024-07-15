@@ -40,21 +40,18 @@ async fn spawn_upload_future(
         object_name,
         bucket_name,
     }: SpawnUploadFutureOptions,
-) -> Result<JoinHandle<UploadPartResult>, Error> {
-    let client_clone = client.clone();
-    let counter_clone = counter.clone();
+) -> JoinHandle<Result<UploadPartResult, Error>> {
+    tokio::spawn(async move {
+        let _ = semaphore
+            .clone()
+            .acquire_owned()
+            .await
+            .map_err(|_| Error::AcquireError)?;
 
-    let permit = semaphore
-        .clone()
-        .acquire_owned()
-        .await
-        .map_err(|_| Error::AcquireError("AcquireError".to_string()))?;
-
-    Ok(tokio::spawn(async move {
-        let part_number = counter_clone.fetch_add(1, Ordering::SeqCst);
+        let part_number = counter.fetch_add(1, Ordering::SeqCst);
 
         let result = upload_part(
-            &client_clone,
+            &client,
             &bucket_name,
             &object_name,
             &upload_id,
@@ -63,32 +60,21 @@ async fn spawn_upload_future(
         )
         .await;
 
-        drop(permit);
-
-        UploadPartResult {
+        Ok(UploadPartResult {
             part_number,
             e_tag_result: result,
-        }
-    }))
+        })
+    })
 }
 
 /// Additional options for `upload_object` to
 /// control the `buffer_size`, `data_part_size`,
 /// and the `semaphore_permits`
+#[derive(Default)]
 pub struct UploadObjectAdditionalOptions {
     pub buffer_size: Option<usize>,
     pub data_part_size: Option<usize>,
     pub semaphore_permits: Option<usize>,
-}
-
-impl Default for UploadObjectAdditionalOptions {
-    fn default() -> Self {
-        Self {
-            buffer_size: None,
-            data_part_size: None,
-            semaphore_permits: None,
-        }
-    }
 }
 
 /// Upload a object named `object_name` to the bucket named `bucket_name` via
@@ -187,18 +173,18 @@ where
                 let mut bytes = vec![];
                 std::mem::swap(&mut data_part_buffer, &mut bytes);
 
-                let join_handle = spawn_upload_future(SpawnUploadFutureOptions {
-                    bytes,
-                    client: client.clone(),
-                    counter: counter.clone(),
-                    semaphore: semaphore.clone(),
-                    upload_id: upload_id.clone(),
-                    object_name: object_name.clone(),
-                    bucket_name: bucket_name.clone(),
-                })
-                .await?;
-
-                join_handles.push(join_handle);
+                join_handles.push(
+                    spawn_upload_future(SpawnUploadFutureOptions {
+                        bytes,
+                        client: client.clone(),
+                        counter: counter.clone(),
+                        semaphore: semaphore.clone(),
+                        upload_id: upload_id.clone(),
+                        object_name: object_name.clone(),
+                        bucket_name: bucket_name.clone(),
+                    })
+                    .await,
+                );
             } else {
                 return Err(Error::internal("upload_id was None on multipart upload"));
             }
@@ -211,39 +197,45 @@ where
     std::mem::swap(&mut data_part_buffer, &mut bytes);
     total_bytes += bytes.len();
 
-    let join_handle = spawn_upload_future(SpawnUploadFutureOptions {
-        bytes,
-        client: client.clone(),
-        counter,
-        semaphore,
-        upload_id: upload_id.clone(),
-        object_name: object_name.clone(),
-        bucket_name: bucket_name.clone(),
-    })
-    .await?;
+    join_handles.push(
+        spawn_upload_future(SpawnUploadFutureOptions {
+            bytes,
+            client: client.clone(),
+            counter,
+            semaphore,
+            upload_id: upload_id.clone(),
+            object_name: object_name.clone(),
+            bucket_name: bucket_name.clone(),
+        })
+        .await,
+    );
 
-    join_handles.push(join_handle);
     let mut e_tags = vec![];
 
     for join_handle in join_handles {
         match join_handle.await {
-            Ok(UploadPartResult {
-                part_number,
-                e_tag_result,
-            }) => match e_tag_result {
-                Ok(e_tag) => {
-                    e_tags.push(ETag { e_tag, part_number });
-                }
+            Ok(upload_part_result) => match upload_part_result {
+                Ok(UploadPartResult {
+                    part_number,
+                    e_tag_result,
+                }) => match e_tag_result {
+                    Ok(e_tag) => {
+                        e_tags.push(ETag { e_tag, part_number });
+                    }
+                    Err(err) => {
+                        abort_multipart_upload(&client, &bucket_name, &object_name, &upload_id)
+                            .await?;
+                        return Err(err);
+                    }
+                },
                 Err(err) => {
                     abort_multipart_upload(&client, &bucket_name, &object_name, &upload_id).await?;
-
                     return Err(err);
                 }
             },
             Err(_) => {
                 abort_multipart_upload(&client, &bucket_name, &object_name, &upload_id).await?;
-
-                return Err(Error::JoinError("JoinError".to_string()));
+                return Err(Error::JoinError);
             }
         }
     }
