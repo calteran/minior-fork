@@ -81,17 +81,13 @@ async fn test_upload_multi_get() {
         .run_test(|minio, bucket_name| async move {
             let file_bytes = get_test_file_bytes(object_name).await?;
 
-            let mut e_tags = vec![];
-
             let mut upload_manager = minio.upload_object_multi(&bucket_name, object_name).await?;
 
-            let (e_tag, part_number) = upload_manager
-                .next_part(&minio.client, file_bytes.clone())
+            upload_manager
+                .upload_part(&minio.client, file_bytes.clone())
                 .await?;
 
-            e_tags.push(ETag { e_tag, part_number });
-
-            let uploaded_bytes = upload_manager.complete(&minio.client, e_tags).await?;
+            let uploaded_bytes = upload_manager.complete(&minio.client).await?;
 
             if file_bytes.len() != uploaded_bytes {
                 test_error!("upload_object bytes counter did not equal the files size");

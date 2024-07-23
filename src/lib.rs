@@ -33,6 +33,7 @@ use tokio::io::{AsyncBufRead, AsyncRead};
 use core::pagination_iter::ObjectPaginationIter;
 
 /// Represents an ETag used for multi-part uploads
+#[derive(Debug, Clone)]
 pub struct ETag {
     pub e_tag: String,
     pub part_number: usize,

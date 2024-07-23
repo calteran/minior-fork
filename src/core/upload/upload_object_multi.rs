@@ -24,24 +24,14 @@ use aws_sdk_s3::Client;
 /// ).await?;
 ///
 /// let part_bytes: Vec<u8> = ...;
-///
-/// let (
-///     e_tag: String,
-///     part_number: usize,
-/// ) = upload_manager.next_part(&client, part_bytes).await?;
-///
-/// let mut e_tags: Vec<ETag> = vec![];
-///
-/// e_tags.push(ETag { tag: e_tag, part_number, });
+/// upload_manager.upload_part(&client, part_bytes).await?;
 ///
 /// ... // Upload more parts if needed
 ///
-/// let bytes_uploaded: usize = upload_manager.complete(
-///     &client,
-///     e_tags,
-/// ).await?;
+/// let bytes_uploaded: usize = upload_manager.complete(&client).await?;
 /// ```
 pub struct UploadManager<'um> {
+    pub e_tags: Vec<ETag>,
     pub upload_id: String,
     pub part_index: usize,
     pub bucket_name: &'um str,
@@ -74,6 +64,7 @@ impl<'um> UploadManager<'um> {
         let upload_id = start_multipart_upload(client, bucket_name, object_name).await?;
 
         Ok(UploadManager {
+            e_tags: vec![],
             upload_id,
             part_index: 0,
             bucket_name,
@@ -82,7 +73,7 @@ impl<'um> UploadManager<'um> {
         })
     }
 
-    /// Obtain the e_tag and part number for the provided part bytes
+    /// Obtain the `ETag` for the provided part bytes
     ///
     /// ---
     /// Example Usage:
@@ -92,32 +83,26 @@ impl<'um> UploadManager<'um> {
     ///
     /// let part_bytes: Vec<u8> = ...;
     ///
-    /// let (
-    ///     e_tag: String,
-    ///     part_number: usize,
-    /// ) = upload_manager.next_part(&client, part_bytes).await?;
+    /// upload_manager.upload_part(&client, part_bytes).await?;
     /// ```
-    pub async fn next_part(
-        &mut self,
-        client: &Client,
-        bytes: Vec<u8>,
-    ) -> Result<(String, usize), Error> {
+    pub async fn upload_part(&mut self, client: &Client, bytes: Vec<u8>) -> Result<(), Error> {
         let part_number = self.part_index + 1;
         self.part_index += 1;
         self.bytes_uploaded += bytes.len();
 
-        Ok((
-            upload_part(
-                client,
-                self.bucket_name,
-                self.object_name,
-                &self.upload_id,
-                part_number,
-                bytes,
-            )
-            .await?,
+        let e_tag = upload_part(
+            client,
+            self.bucket_name,
+            self.object_name,
+            &self.upload_id,
             part_number,
-        ))
+            bytes,
+        )
+        .await?;
+
+        self.e_tags.push(ETag { e_tag, part_number });
+
+        Ok(())
     }
 
     /// Abort the multipart upload
@@ -147,14 +132,12 @@ impl<'um> UploadManager<'um> {
     ///
     /// let mut upload_manager: UploadManager = ...;
     ///
-    /// let e_tags: Vec<ETag> = ...;
-    ///
-    /// let bytes_uploaded: usize = upload_manager.complete(&client, e_tags).await?;
+    /// let bytes_uploaded: usize = upload_manager.complete(&client).await?;
     /// ```
-    pub async fn complete(&self, client: &Client, e_tags: Vec<ETag>) -> Result<usize, Error> {
+    pub async fn complete(&self, client: &Client) -> Result<usize, Error> {
         complete_multipart_upload(
             client,
-            e_tags,
+            self.e_tags.clone(),
             self.bucket_name,
             self.object_name,
             &self.upload_id,
